@@ -4,17 +4,16 @@ struct Sphere{
     int i;// Texture Id
 };
 
-struct Ellipsoid{
-    vec3 c;// Center
-    vec3 r ;//radius
-    int i;// Texture Id
+struct Ellipsoide{
+    vec3 c; // Center
+    vec3 r; // Radius
+    int i; // Texture Id
 };
 
-
-struct Cylindre{
-    vec3 c;// Center
+struct Cylinder{
+    vec3 a;// Bottom Center
+    vec3 b;// Middle Center
     float r;// Radius
-    float h; // Height
     int i;// Texture Id
 };
 
@@ -128,25 +127,59 @@ bool IntersectSphere(Ray ray,Sphere sph,out Hit x)
     x=Hit(t,normalize(p-sph.c),sph.i);
     return true;
     
+
     
-    /* code du prof
-    vec3 oc=ray.o-sph.c;
-    float b=dot(oc,ray.d);
-    float c=dot(oc,oc)-sph.r*sph.r;
-    float d=b*b-c;
+}
+
+bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x)
+{
+    vec3 oc=ray.o-ellip.c;
+    float a = dot((ray.d/ellip.r),(ray.d/ellip.r));
+    float b = 2.0*dot((oc/ellip.r), (ray.d/ellip.r));
+    float c = dot((oc/ellip.r), (oc/ellip.r)) - dot(ellip.r, ellip.r);
+
+    float d = b*b - 4. *a *c;
+    
     if(d>0.)
     {
-        float t=-b-sqrt(d);
+        float t1 = (-b - sqrt(d)) / (2.0*a);
+        float t2 = (-b + sqrt(d)) / (2.0*a);
+        float t = min(t1, t2);
         if(t>0.)
         {
             vec3 p=Point(ray,t);
-            x=Hit(t,normalize(p-sph.c),sph.i);
+            //vec3 normal = normalize( (p-ellip.c) / dot(ellip.r, ellip.r));
             
+            //x=Hit(t,normal,ellip.i);
+            x=Hit(t,normalize(p-ellip.c),ellip.i);
             return true;
         }
     }
     return false;
-    */
+}
+
+// Cylinder intersection
+// ray : The ray
+//   x : Returned intersection information
+bool IntersectCylinder(Ray ray,Cylinder cyl,out Hit x)
+{
+    vec3 oa = ray.o-cyl.a;
+    vec3 u = normalize(cyl.a - cyl.b);
+    
+    float a = length(ray.d) - dot(ray.d, u)*dot(ray.d, u); 
+     
+    float b = 2. * ( dot(oa, ray.d) - dot(oa, u) * dot(ray.d, u));
+    float c = dot(oa, oa) - dot(oa, u)*dot(oa, u) - cyl.r*cyl.r;
+    
+    float t = solvRoots(a, b, c);
+    if(t==-1.){
+        return false;
+    }
+    
+    vec3 p=Point(ray,t);
+    x=Hit(t,normalize(p-u),cyl.i);
+    return true;
+    
 }
 
 // Plane intersection
@@ -164,42 +197,19 @@ bool IntersectPlane(Ray ray,Plane pl,out Hit x)
     return false;
 }
 
-
-
-bool IntersectCylindre(Ray ray,Cylindre cyl,out Hit x)
-{
-    vec3 oc=ray.o-cyl.c;
-    float b=dot(oc,ray.d);
-    float c=dot(oc,oc)-cyl.r*cyl.r;
-    float d=b*b-c;
-    if(d>0.)
-    {
-        float t=-b-sqrt(d);
-        if(t>0.)
-        {
-            vec3 p=Point(ray,t);
-            x=Hit(t,normalize(p-cyl.c),cyl.i);
-            
-            return true;
-        }
-    }
-    return false;
-    
-}
-
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
 bool Intersect(Ray ray,out Hit x)
 {
     // Spheres
-    const Sphere sph1=Sphere(vec3(0.,0.,0.),1.,1);
+    const Sphere sph1=Sphere(vec3(0.,0.,1.),1.,1);
     const Sphere sph2=Sphere(vec3(2.,0.,2.),1.,1);
     const Plane pl=Plane(vec3(0.,0.,1.),vec3(0.,0.,0.),0);
     
-    const Ellipsoid ellip1=Ellipsoid(vec3(3.,3.,3.),vec3(2.,2.,2.),1);
+    const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
     
-    //const Cylindre cyl1=Cylindre(vec3(), 
+    const Cylinder cyll1 = Cylinder(vec3(2.,4.,2.), vec3(2., 3., 2.), 1. ,1);
     
     x=Hit(1000.,vec3(0),-1);
     Hit current;
@@ -217,7 +227,14 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    
+    if(IntersectEllipsoide(ray,ellip1,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    }
+    if(IntersectCylinder(ray,cyll1,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    }
     return ret;
 }
 
@@ -276,7 +293,6 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
 {
     // From uv which are the pixel coordinates in [0,1], change to [-1,1] and apply aspect ratio
     vec2 uv=(-iResolution.xy+2.*fragCoord.xy)/iResolution.y;
-    
     
     // Mouse control
     vec2 mouse=iMouse.xy/iResolution.xy;
