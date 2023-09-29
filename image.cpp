@@ -79,39 +79,19 @@ float solvRoots(float a, float b, float c){
     float t;
     //on calcul le déterminant d pour trouver les racine de l'équation
     float d = b*b - 4.*a*c;
-    // on trouve la solution de l'equation
-    if( d < 0. ) {
-        return -1.;
+    if(d>0.)
+    {
+        float t1 = (-b - sqrt(d)) / (2.0*a);
+        float t2 = (-b + sqrt(d)) / (2.0*a);
+        float t = min(t1, t2);
+        return t;
     }
-    if( d == 0. ) {
-        t = -b / 2.*a;
-    }
-    else {
-        float t1 = (-b + sqrt(d))/2.*a;
-        float t2 = (-b - sqrt(d))/2.*a;
-        if(t1 < 0.){
-            if(t2 < 0.){
-                return -1.;
-            }
-            t = t2;
-        }
-        else{
-            if(t2 < 0.){
-                t = t1;
-            }
-            else{
-                t = min( t1, t2 );
-            }
-        }
-    }
-    return t;
 }
 
 // Sphere intersection
 // ray : The ray
 //   x : Returned intersection information
-bool IntersectSphere(Ray ray,Sphere sph,out Hit x)
-{
+bool IntersectSphere(Ray ray,Sphere sph,out Hit x){
     //on cherche t tel que (Origine de ray + direction.t)² == rayon²
     float t;
     //on defini a,b,c pour ax²+2bx+ c = 0
@@ -125,10 +105,7 @@ bool IntersectSphere(Ray ray,Sphere sph,out Hit x)
     // on retourne comme le prof
     vec3 p=Point(ray,t);
     x=Hit(t,normalize(p-sph.c),sph.i);
-    return true;
-    
-
-    
+    return true;    
 }
 
 bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x)
@@ -164,22 +141,24 @@ bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x)
 bool IntersectCylinder(Ray ray,Cylinder cyl,out Hit x)
 {
     vec3 oa = ray.o-cyl.a;
-    vec3 u = normalize(cyl.a - cyl.b);
+    vec3 u = normalize(cyl.b - cyl.a);
     
     float a = length(ray.d) - dot(ray.d, u)*dot(ray.d, u); 
-     
     float b = 2. * ( dot(oa, ray.d) - dot(oa, u) * dot(ray.d, u));
     float c = dot(oa, oa) - dot(oa, u)*dot(oa, u) - cyl.r*cyl.r;
     
-    float t = solvRoots(a, b, c);
-    if(t==-1.){
-        return false;
+    float t = solvRoots(a, b, c);    
+    if(t>0.){
+    
+        vec3 p=Point(ray,t);
+        vec3 v = dot(p-cyl.a, u) * u;
+        vec3 h = cyl.a + v;
+        if (length(v)<= length(cyl.b-cyl.a)){
+            x=Hit(t,normalize(p-h),cyl.i);
+        return true;
+        }
     }
-    
-    vec3 p=Point(ray,t);
-    x=Hit(t,normalize(p-u),cyl.i);
-    return true;
-    
+    return false;
 }
 
 // Plane intersection
@@ -209,7 +188,7 @@ bool Intersect(Ray ray,out Hit x)
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
     
-    const Cylinder cyll1 = Cylinder(vec3(2.,4.,2.), vec3(2., 3., 2.), 1. ,1);
+    const Cylinder cyll1 = Cylinder(vec3(2.,2.,2.), vec3(2., 10., 2.), 1. ,1);
     
     x=Hit(1000.,vec3(0),-1);
     Hit current;
