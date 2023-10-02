@@ -23,6 +23,13 @@ struct Plane{
     int i;// Texture Id
 };
 
+struct disc{
+    vec3 n;
+    vec3 p;
+    float r;
+    int i ;
+};
+
 struct Hit{
     float t;// Intersection depth
     vec3 n;// Normal
@@ -102,6 +109,20 @@ bool IntersectPlane(Ray ray,Plane pl,out Hit x){
     return false;
 }
 
+// disc intersection
+// ray : The ray
+//   x : Returned intersection information
+bool IntersectDisc(Ray ray,disc disc,out Hit x){
+    bool pl = IntersectPlane(ray, Plane(disc.n, disc.p, disc.i), x);
+    if(pl){
+        vec3 p=Point(ray, x.t);
+        if(length(p-disc.p) < disc.r){
+            x = Hit(x.t, disc.n, disc.i);
+            return true;
+        }
+    }
+    return false;
+}
 
 // Sphere intersection
 // ray : The ray
@@ -147,7 +168,7 @@ bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x){
 // Cylinder intersection
 // ray : The ray
 //   x : Returned intersection information
-bool IntersectCylinder(Ray ray,Cylinder cyl,out Hit x)
+bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x)
 {
     vec3 oa = ray.o-cyl.a;
     vec3 u = normalize(cyl.b - cyl.a);
@@ -158,16 +179,57 @@ bool IntersectCylinder(Ray ray,Cylinder cyl,out Hit x)
     
     float t = solvRoots(a, b, c);
     if(t>0.){
-    
         vec3 p=Point(ray,t);
-        vec3 v = dot(p-cyl.a, u) * u;
-        vec3 h = cyl.a + v;
-        if (length(v)<= length(cyl.b-cyl.a)){
+        float v = dot(p-cyl.a, u);
+        vec3 h = cyl.a + v*u;
+        if (v>=0. && v<= length(cyl.b-cyl.a)){
             x=Hit(t,normalize(p-h),cyl.i);
-        return true;
+            return true;
         }
     }
     return false;
+}
+
+bool IntersectCapsule(Ray ray, Cylinder cyl, out Hit x){
+    x=Hit(1000.,vec3(0),-1);
+    Hit x_;
+    Sphere sph1 = Sphere(cyl.a, cyl.r, cyl.i);
+    Sphere sph2 = Sphere(cyl.b, cyl.r, cyl.i);
+    bool b1 = IntersectSphere(ray, sph1, x_);
+    if(b1 && x_.t < x.t){
+        x=x_;
+    }
+    bool b2 = IntersectSphere(ray, sph2, x_);
+    if(b2 && x_.t < x.t){
+        x=x_;
+    }
+    bool corp = IntersectCylinderBase(ray, cyl, x_);
+    if(corp && x_.t < x.t){
+        x=x_;
+    }
+    return b1 || corp || b2;  
+}
+
+bool IntersectCylinder(Ray ray, Cylinder cyl, out Hit x){
+    x=Hit(1000.,vec3(0),-1);
+    Hit x_;
+    
+    disc ds1 = disc(normalize(cyl.b-cyl.a), cyl.a, cyl.r, cyl.i);
+    disc ds2 = disc(normalize(cyl.b-cyl.a), cyl.b, cyl.r, cyl.i);
+    Sphere sph2 = Sphere(cyl.b, cyl.r, cyl.i);
+    bool b1 = IntersectDisc(ray, ds1, x_);
+    if(b1 && x_.t < x.t){
+        x.t=x_.t;
+    }
+    bool b2 = IntersectDisc(ray, ds2, x_);
+    if(b2 && x_.t < x.t){
+        x.t=x_.t;
+    }
+    bool corp = IntersectCylinderBase(ray, cyl, x_);
+    if(corp && x_.t < x.t){
+        x=x_;
+    }
+    return b1 || corp || b2;  
 }
 
 // OPERATORS
@@ -184,7 +246,9 @@ bool Intersect(Ray ray,out Hit x)
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
     
-    const Cylinder cyll1 = Cylinder(vec3(2.,2.,2.), vec3(2., 5., 2.), 1. ,1);
+    const Cylinder cyll1 = Cylinder(vec3(3.,2.,2.), vec3(2., 4., 5.), 1. ,1);
+    
+    const disc ds = disc(normalize(vec3(0.,0.,1.)), vec3(3.,3.,1.), 4.,1);
     
     x=Hit(1000.,vec3(0),-1);
     Hit current;
@@ -194,10 +258,11 @@ bool Intersect(Ray ray,out Hit x)
         ret=true;
     }
     
-    if(IntersectSphere(ray,sph2,current)&&current.t<x.t){
+    if(IntersectDisc(ray,ds,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
+    
     if(IntersectPlane(ray,pl,current)&&current.t<x.t){
         x=current;
         ret=true;
@@ -210,6 +275,7 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
+
     return ret;
 }
 
