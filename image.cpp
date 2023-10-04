@@ -17,6 +17,12 @@ struct Cylinder{
     int i;// Texture Id
 };
 
+struct Cube{
+    vec3 a;
+    vec3 b;
+    int i;
+};
+
 struct Plane{
     vec3 n;// Normal
     vec3 p;// Point
@@ -107,6 +113,61 @@ bool IntersectPlane(Ray ray,Plane pl,out Hit x){
         return true;
     }
     return false;
+}
+
+bool IntersectCube(Ray ray, Cube cb, out Hit x){
+    vec3 t0, t1;
+    //défini tout les cas de t0 et t1 pour x puis y puis z dans tous les angles de la cam
+    if (ray.d.x >= 0.) { 
+        t0.x = (cb.a.x - ray.o.x) / ray.d.x;
+        t1.x = (cb.b.x - ray.o.x) / ray.d.x;
+    } 
+    else { 
+        t0.x = (cb.b.x - ray.o.x) / ray.d.x;
+        t1.x = (cb.a.x - ray.o.x) / ray.d.x;
+    } 
+    
+    if (ray.d.y >= 0.) { 
+        t0.y = (cb.a.y - ray.o.y) / ray.d.y;
+        t1.y = (cb.b.y - ray.o.y) / ray.d.y;
+    } 
+    else { 
+        t0.y = (cb.b.y - ray.o.y) / ray.d.y;
+        t1.y = (cb.a.y - ray.o.y) / ray.d.y;
+    } 
+    
+    if (ray.d.z >= 0.) { 
+        t0.z = (cb.a.z - ray.o.z) / ray.d.z;
+        t1.z = (cb.b.z - ray.o.z) / ray.d.z;
+    } 
+    else { 
+        t0.z = (cb.b.z - ray.o.z) / ray.d.z;
+        t1.z = (cb.a.z - ray.o.z) / ray.d.z;
+    }
+    //filtre des cas ne touchant pas la boite
+    if (t0.x > t1.y || t0.y > t1.x) return false;
+    //filtre pour trouver tmin et tmax
+    float tmin = max(t0.x, t0.y);
+    float tmax = min(t1.x, t1.y);
+    //même opération étendu à z
+    if (tmin > t1.z || t0.z > tmax) return false;
+    tmin = max(tmin, t0.z);
+    tmax = min(tmax, t1.z);
+    //sélection du t:
+    float t = (tmin < 0.) ? tmax : tmin;
+    if(t>0.){
+        vec3 p=Point(ray,t);
+        //le centre du cube
+        vec3 c;
+        if (length(cb.a) < length(cb.b))
+            c = cb.a + cb.b/2.;
+        else
+            c = cb.b + cb.a/2.;
+        x=Hit(t, normalize(p-c),cb.i);
+        return true;
+    }
+    return false;
+    
 }
 
 // disc intersection
@@ -250,10 +311,17 @@ bool Intersect(Ray ray,out Hit x)
     
     const disc ds = disc(normalize(vec3(0.,0.,1.)), vec3(3.,3.,1.), 4.,1);
     
+    const Cube cb = Cube(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
+    
     x=Hit(1000.,vec3(0),-1);
     Hit current;
     bool ret=false;
     if(IntersectSphere(ray,sph1,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    }
+    
+    if(IntersectCube(ray,cb,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
