@@ -295,88 +295,128 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
 //   x : Returned intersection information
 bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et ys
 {
-    vec3 oc=ray.o-tor.c;
-    
-    float u = dot(ray.d, ray.d);
-    float v = 2. * dot(oc, ray.d); 
-    float w = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
-    
-    float l = - 4. * tor._R * ((ray.d.x * ray.d.x)+(ray.d.y * ray.d.y));
-    float m = - 8. * tor._R * ((ray.o.x * ray.d.x) + (ray.o.y * ray.d.y));
-    float n = - 4. * tor._R * ((ray.o.x * ray.o.x) + (ray.o.y * ray.o.y));
-    
-    
-    //a = (d0² + d1² + d2²)²
-    
-    //b = 4 (d0² + d1² + d2²)(d0 p0 + d1 p1 + d2 p2)
-    
-    //c = 2 (d0² + d1² + d2²)(p0² + p1² + p2² + R² - r²) + (d0 p0 + d1 p1 + d2 p2)² - 4 R² (d0² + d2²)
-    
-    //d = 4 (d0 p0 + d1 p1 + d2 p2) (p0² + p1² + p2² + R² - r²) - 8 R² (d0 p0 + d2 p2)
-    
-    //e = (p0² + p1² + p2² + R² - r²)² - 4 R² (p0² + p2²)
-    
-    //float a2 = dot(ray.d, ray.d) * dot(ray.d, ray.d);
-    
-    //float b2 = 4. * dot(ray.d, ray.d) * dot(ray.d, oc);
-    
-    //float c2 = 2. * dot(ray.d, ray.d) * ( dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r)) + (dot(ray.d, oc) * dot(ray.d, oc) ) - 4. * (tor._R * tor._R) *  (dot(ray.d.x, ray.d.x) * dot(ray.d.y, ray.d.y) ); 
-    
-    //float d2 = 4. * dot(ray.d, oc) * ((dot(oc, oc) * dot(oc, oc)) + (tor._R * tor._R) - (tor._r * tor._r)) - 8. * (tor._R * tor._R) * (dot(ray.d.x, oc.x) + dot(ray.d.y, oc.y)  );
-    
-    //float e2 = (dot(oc, oc) + (tor._R * tor._R)- (tor._r * tor._r)) * (dot(oc, oc) + (tor._R * tor._R)- (tor._r * tor._r)) - 4. *  (dot(oc.x, oc.x) * dot(oc.y, oc.y));
-    
-    
-    float a = u * u;
-    float b = 2. * u * v;
-    float c = (2. * u * w) + (v * v) + l;
-    float d = (2. * v * w) + m;
-    float e = (w * w) + n;
-    
-    
-    vec4 roots;
-    int nroots = solveQuartic(a, b, c, d, e, roots);
-     
-    
-    if(nroots > 0)
-    {
-    
-        float t1, t2, t;
-    
-        if(nroots == 2){
-        
-            t =  min(roots.x, roots.y);
 
-        }
+    if(tor._R > tor._r){
+    
+        vec3 oc=ray.o-tor.c;
+        float u = dot(ray.d, ray.d);
+        float v = 2. * dot(oc, ray.d); 
+        float w = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
 
-        if (nroots == 4){
-            t1 = min(roots.x, roots.y);
-            t2 = min(roots.z, roots.w);
-            t = min (t1, t2);
-        }
-        
-        
-        
-        //4 z (x² + y² + z² + R² - r²) - 8 R² z
-        //df/dx = 4 x (x² + y² + z² + R² - r²) - 8 R² x
-//df/dy = 4 y (x² + y² + z² + R² - r²)
-//df/dz = 4 z (x² + y² + z² + R² - r²) - 8 R² z
+        float l = - 4. * (tor._R * tor._R) * ((ray.d.x * ray.d.x) + (ray.d.y * ray.d.y));
 
-        
-        if(t>0.)
+        float m = - 8. * (tor._R * tor._R) * ((ray.o.x * ray.d.x) + (ray.o.y * ray.d.y)); // faute ici pour le o-c
+
+        float n = - 4. * (tor._R * tor._R) * ((ray.o.x * ray.o.x) + (ray.o.y * ray.o.y)); // faute ici pour le o-c
+
+
+        float f = dot(ray.d, ray.d);
+        float g = 2. * dot(oc, ray.d); 
+        float h = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
+
+        float i = - 4. * (tor._R * tor._R) * ((ray.d.x * ray.d.x) + (ray.d.y * ray.d.y));
+
+        float j = - 8. * (tor._R * tor._R) * ((oc.x * ray.d.x) + (oc.y * ray.d.y)); // faute ici pour le o-c
+
+        float k = - 4. * (tor._R * tor._R) * ((oc.x * oc.x) + (oc.y * oc.y)); // faute ici pour le o-c
+
+
+        float a = u * u;
+        float b = 2. * u * v;
+        float c = (2. * u * w) + (v * v) + l;
+        float d = (2. * v * w) + m;
+        float e = (w * w) + n;
+
+        float a1 = f * f;
+        float b1 = 2. * f * g;
+
+        float c1 = (2. * f * h) + (g * g) + i;
+
+        float d1 = (2. * g * h) + j;
+        float e1 = (h * h) + k;
+
+
+        vec4 roots;
+        //int nroots = solveQuartic(a, b, c, d, e, roots);
+        int nroots = solveQuartic(a1, b1, c1, d1, e1, roots);
+
+
+        if(nroots > 0)
         {
-            vec3 p=Point(ray, t);
-            vec3 normale;
-            normale.x =  4. * p.x * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r) - 8.* (tor._R)* (tor._R) * p.x;
-            normale.y = 4. * p.y * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r);
-            normale.z = 4. * p.z * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r) - 8.* (tor._R)* (tor._R) * p.z;
-            x=Hit(t,normalize(normale),tor.i);
-            
-            return true;
+
+            float t1, t2, t;
+
+            if(nroots == 2){
+
+                t =  min(roots.x, roots.y);
+
+            }
+
+            if (nroots == 4){
+                t1 = min(roots.x, roots.y);
+                t2 = min(roots.z, roots.w);
+                t = min (t1, t2);
+            }
+
+
+
+            //4 z (x² + y² + z² + R² - r²) - 8 R² z
+            //df/dx = 4 x (x² + y² + z² + R² - r²) - 8 R² x
+            //df/dy = 4 y (x² + y² + z² + R² - r²)
+            //df/dz = 4 z (x² + y² + z² + R² - r²) - 8 R² z
+
+
+            if(t>0.)
+            {
+                vec3 p=Point(ray, t);
+                vec3 normale;
+                //normale.x =  4. * p.x * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r) - 8.* (tor._R)* (tor._R) * p.x;
+                //normale.y = 4. * p.y * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r);
+                //normale.z = 4. * p.z * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r) - 8.* (tor._R)* (tor._R) * p.z;
+                
+                //normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)  ));
+                //normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0) ));
+                //normale.z = tor.c.z;
+                
+                
+                normale.x = p.x * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                normale.z = tor.c.z;
+                
+                //normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
+                //normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
+                //normale.z = 0.;
+                
+                
+                x=Hit(t,normalize(p - normale),tor.i);
+
+                return true;
+                
+                
+                //Chatgpt normale
+                /*vec3 p = Point(ray, t); // Point d'intersection sur le tore
+                vec3 normale;
+
+                // Vecteur du centre du tore au point d'intersection
+                vec3 center_to_point = p - tor.c;
+
+                // Normale du plan du tore
+                vec3 plane_normal = normalize(center_to_point - tor._R * normalize(center_to_point));
+
+                // Normale finale
+                normale = normalize(center_to_point - tor._R * plane_normal);
+
+                x = Hit(t, normale, tor.i);
+
+                return true;*/
+                
+                
+            }
+
         }
-        
+        return false;
+    
     }
-    return false;
     
 }
 
@@ -401,7 +441,7 @@ bool IntersectPlane(Ray ray,Plane pl,out Hit x)
 bool Intersect(Ray ray,out Hit x)
 {
     // Spheres
-    const Sphere sph1=Sphere(vec3(0.,4.,1.),1.,1);
+    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
     const Sphere sph2=Sphere(vec3(2.,0.,2.),1.,1);
     const Plane pl=Plane(vec3(0.,0.,1.),vec3(0.,0.,0.),0);
     
@@ -409,7 +449,9 @@ bool Intersect(Ray ray,out Hit x)
     
     const Cylinder cyll1 = Cylinder(vec3(3.,3.,0.), vec3(3., 3., 5.), 1. ,1);
     
-    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., 0.5, 1);
+    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
+    const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
+    const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
     x=Hit(1000.,vec3(0),-1);
     Hit current;
@@ -438,6 +480,14 @@ bool Intersect(Ray ray,out Hit x)
     
     //(Ray ray,Torus tor,out Hit x, out Hit y)
     if(IntersectTorus(ray,tor1,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    }
+    if(IntersectTorus(ray,tor2,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    }
+    if(IntersectTorus(ray,tor3,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
