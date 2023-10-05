@@ -132,6 +132,21 @@ bool IntersectSphere(Ray ray,Sphere sph,out Hit x)
     
 }
 
+// Plane intersection
+// ray : The ray
+//   x : Returned intersection information
+bool IntersectPlane(Ray ray,Plane pl,out Hit x)
+{
+    float t=-dot(ray.o-pl.p,pl.n)/dot(ray.d,pl.n);
+    if(t>0.)
+    {
+        
+        x=Hit(t,vec3(0,0,1),0);
+        return true;
+    }
+    return false;
+}
+
 // Val
 bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x){
     vec3 oc=ray.o-ellip.c;
@@ -171,6 +186,21 @@ bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x)
         vec3 h = cyl.a + v*u;
         if (v>=0. && v<= length(cyl.b-cyl.a)){
             x=Hit(t,normalize(p-h),cyl.i);
+            return true;
+        }
+    }
+    return false;
+}
+
+// disc intersection
+// ray : The ray
+//   x : Returned intersection information
+bool IntersectDisc(Ray ray,disc disc,out Hit x){
+    bool pl = IntersectPlane(ray, Plane(disc.n, disc.p, disc.i), x);
+    if(pl){
+        vec3 p=Point(ray, x.t);
+        if(length(p-disc.p) < disc.r){
+            x = Hit(x.t, disc.n, disc.i);
             return true;
         }
     }
@@ -482,21 +512,6 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
     
     }
     
-}
-
-// Plane intersection
-// ray : The ray
-//   x : Returned intersection information
-bool IntersectPlane(Ray ray,Plane pl,out Hit x)
-{
-    float t=-dot(ray.o-pl.p,pl.n)/dot(ray.d,pl.n);
-    if(t>0.)
-    {
-        
-        x=Hit(t,vec3(0,0,1),0);
-        return true;
-    }
-    return false;
 }
 
 // Scene intersection
