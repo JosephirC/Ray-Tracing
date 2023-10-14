@@ -54,6 +54,16 @@ struct Ray{
     vec3 d;// Direction
 };
 
+struct Light{
+    vec3 lightColor;//color
+    vec3 lightPos;//position
+};
+
+struct Scene{
+    int nbSphere, nbCylinder, nbCapsule, nbCube, nbTorus, nbEllipsoide, nbLight;
+    Sphere tabSph[10];
+};
+
 struct Material
 {
     vec3 d;// Diffuse
@@ -85,7 +95,7 @@ Material Texture(vec3 p,int i)
 {
     if(i==1)
     {
-        return Material(vec3(.8,.5,.4),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
     }
     else if(i==2)
     {
@@ -610,7 +620,7 @@ vec3 Color(Material m,vec3 n, vec3 p, vec3 rayD)
 {
 
     Hit x;
-    vec3 light=normalize(vec3(1,1,1));//vecteur directeur de la lumière
+    vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
 
     if (!Intersect(Ray(p+n*0.01, light), x)) {
         float diff = clamp(dot(n,light),0.,1.);
@@ -654,7 +664,8 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
     vec2 mouse=iMouse.xy/iResolution.xy;
     
     // Ray origin
-    vec3 ro=12.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
+    //défini la position de la cam
+    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
     vec3 ta=vec3(0.,0.,1.5);
     mat3 ca=setCamera(ro,ta);
     
