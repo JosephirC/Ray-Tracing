@@ -54,9 +54,22 @@ struct Ray{
     vec3 d;// Direction
 };
 
+struct Light{
+    vec3 lightColor;//color
+    vec3 lightPos;//position
+};
+
+struct Scene{
+    int nbSphere, nbCylinder, nbCapsule, nbCube, nbTorus, nbEllipsoide, nbLight;
+    Sphere tabSph[10];
+};
+
 struct Material
 {
     vec3 d;// Diffuse
+    vec3 a;//ambiant
+    vec3 s;//specular
+    float coef_s;
 };
 
 float Checkers(in vec2 p)
@@ -82,16 +95,20 @@ Material Texture(vec3 p,int i)
 {
     if(i==1)
     {
-        return Material(vec3(.8,.5,.4));
+        return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+    }
+    else if(i==2)
+    {
+        return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if(i==0)
     {
         // compute checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
-        return Material(col);
+        return Material(col,vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
     }
-    return Material(vec3(0));
+    return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50.);
 }
 
 //fonction résolution equation du second degré:
@@ -533,8 +550,8 @@ bool Intersect(Ray ray,out Hit x)
     const Cube cb = Cube(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
-    const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
-    const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
+    //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
+    //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
     x=Hit(1000.,vec3(0),-1);
     Hit current;
@@ -568,14 +585,14 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    if(IntersectTorus(ray,tor2,current)&&current.t<x.t){
+/*     if(IntersectTorus(ray,tor2,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
     if(IntersectTorus(ray,tor3,current)&&current.t<x.t){
         x=current;
         ret=true;
-    }
+    } */
     return ret;
 }
 
@@ -599,13 +616,21 @@ mat3 setCamera(in vec3 ro,in vec3 ta)
 // Apply color model
 // m : Material
 // n : normal
-vec3 Color(Material m,vec3 n)
+vec3 Color(Material m,vec3 n, vec3 p, vec3 rayD)
 {
-    vec3 light=normalize(vec3(1,1,1));
-    
-    float diff=clamp(dot(n,light),0.,1.);
-    vec3 col=m.d*diff+vec3(.2,.2,.2);
-    return col;
+
+    Hit x;
+    vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
+
+    if (!Intersect(Ray(p+n*0.01, light), x)) {
+        float diff = clamp(dot(n,light),0.,1.);
+        vec3 col= m.d * diff + vec3(.2,.2,.2);
+        return col;
+    }
+    else {
+        return m.a;
+    }
+
 }
 
 // Rendering
@@ -620,7 +645,7 @@ vec3 Shade(Ray ray)
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
         
-        return Color(mat,x.n);
+        return Color(mat,x.n, p, ray.d);
     }
     else
     {
@@ -639,7 +664,8 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
     vec2 mouse=iMouse.xy/iResolution.xy;
     
     // Ray origin
-    vec3 ro=12.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
+    //défini la position de la cam
+    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
     vec3 ta=vec3(0.,0.,1.5);
     mat3 ca=setCamera(ro,ta);
     
