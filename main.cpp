@@ -62,6 +62,8 @@ struct Light{
 struct Scene{
     int nbSphere, nbCylinder, nbCapsule, nbCube, nbTorus, nbEllipsoide, nbLight;
     Sphere tabSph[10];
+    Light tabLight[10];
+    Cylinder tabCyl[10];
 };
 
 struct Material
@@ -69,7 +71,7 @@ struct Material
     vec3 d;// Diffuse
     vec3 a;//ambiant
     vec3 s;//specular
-    float coef_s;
+    float coef_s; // reflection coef
 };
 
 float Checkers(in vec2 p)
@@ -95,7 +97,8 @@ Material Texture(vec3 p,int i)
 {
     if(i==1)
     {
-        return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
     }
     else if(i==2)
     {
@@ -103,10 +106,11 @@ Material Texture(vec3 p,int i)
     }
     else if(i==0)
     {
-        // compute checkboard
+        //compute checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
-        return Material(col,vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        return Material(col,vec3(0.2,0.2,0.2), vec3(0.9, 0.9, 0.9), 50.);
+
     }
     return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50.);
 }
@@ -534,6 +538,7 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
+// Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
 bool Intersect(Ray ray,out Hit x)
 {
     // Spheres
@@ -560,7 +565,6 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    
     if(IntersectSphere(ray,sph2,current)&&current.t<x.t){
         x=current;
         ret=true;
@@ -616,21 +620,64 @@ mat3 setCamera(in vec3 ro,in vec3 ta)
 // Apply color model
 // m : Material
 // n : normal
-vec3 Color(Material m,vec3 n, vec3 p, vec3 rayD)
+vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
 {
+    Light lightTab[2];
+    lightTab[0].lightPos = vec3(3,4,9);
+    lightTab[0].lightColor = vec3(1,1,1);
+    
+    lightTab[1].lightPos = vec3(0,4,5);
+    lightTab[1].lightColor = vec3(1,1,1);
 
-    Hit x;
-    vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
+    vec3 lightDirection1 = normalize(lightTab[0].lightPos - p);
+    vec3 lightDirection2 = normalize(lightTab[1].lightPos - p);
 
-    if (!Intersect(Ray(p+n*0.01, light), x)) {
-        float diff = clamp(dot(n,light),0.,1.);
-        vec3 col= m.d * diff + vec3(.2,.2,.2);
-        return col;
+    Hit osef;
+    Ray r1 = Ray(p + n * 0.001, lightDirection1); // le rayon que j'envoie de point d'intersect de mon objet
+    Ray r2 = Ray(p + n * 0.001, lightDirection2); // le rayon que j'envoie de point d'intersect de mon objet
+    vec3 finalColor1;
+    vec3 finalColor2;
+
+    // Je dois calculer la lumiere spectrale et la lumiere diffus
+    // Éclairage spéculaire             
+    vec3 viewDir = normalize(camera.o - p); // Direction de la caméra  
+
+    if(Intersect(r1, osef)){
+        finalColor1 = vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
+    } else {
+        vec3 reflectDir1 = reflect(-lightDirection1, n); // Direction de réflexion de lumiere depuis mon objet   
+        float spec1 = pow(max(dot(viewDir, reflectDir1), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+        vec3 specularColor1 = m.s * spec1 * lightTab[0].lightColor;             // Éclairage diffus             
+        float diff1 = max(dot(n, lightDirection1), 0.0); // Composante diffuse     
+        vec3 diffuseColor1 = m.d * diff1 * lightTab[0].lightColor;
+         // Couleur a retourner
+        finalColor1 = specularColor1 + diffuseColor1;
     }
-    else {
-        return m.a;
+    if(Intersect(r2, osef)){
+       finalColor2 =vec3(0.0); //je retourne la couleur de mon ombre (noir)
+    } else{
+        vec3 reflectDir2 = reflect(-lightDirection2, n); // Direction de réflexion de lumiere depuis mon objet   
+        float spec2 = pow(max(dot(viewDir, reflectDir2), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+        vec3 specularColor2 = m.s * spec2 * lightTab[1].lightColor;             // Éclairage diffus             
+        float diff2 = max(dot(n, lightDirection2), 0.0); // Composante diffuse     
+        vec3 diffuseColor2 = m.d * diff2 * lightTab[1].lightColor;
+        // Couleur a retourner
+        finalColor2 = specularColor2 + diffuseColor2;
     }
+        
+    return finalColor1 + finalColor2;
 
+    // Hit x;
+    // vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
+
+    // if (!Intersect(Ray(p+n*0.01, light), x)) {
+    //     float diff = clamp(dot(n,light),0.,1.); // diff pour diffus
+    //     vec3 col= m.d * diff + vec3(.2,.2,.2);
+    //     return col;
+    // }
+    // else {
+    //     return m.a;
+    // }
 }
 
 // Rendering
@@ -645,7 +692,7 @@ vec3 Shade(Ray ray)
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
         
-        return Color(mat,x.n, p, ray.d);
+        return Color(mat,x.n, p, ray);
     }
     else
     {
