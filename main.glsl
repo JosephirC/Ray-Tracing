@@ -54,9 +54,24 @@ struct Ray{
     vec3 d;// Direction
 };
 
+struct Light{
+    vec3 lightColor;//color
+    vec3 lightPos;//position
+};
+
+struct Scene{
+    int nbSphere, nbCylinder, nbCapsule, nbCube, nbTorus, nbEllipsoide, nbLight;
+    Sphere tabSph[10];
+    Light tabLight[10];
+    Cylinder tabCyl[10];
+};
+
 struct Material
 {
     vec3 d;// Diffuse
+    vec3 a;//ambiant
+    vec3 s;//specular
+    float coef_s; // reflection coef
 };
 
 float Checkers(in vec2 p)
@@ -82,16 +97,22 @@ Material Texture(vec3 p,int i)
 {
     if(i==1)
     {
-        return Material(vec3(.8,.5,.4));
+        // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
+    }
+    else if(i==2)
+    {
+        return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if(i==0)
     {
-        // compute checkboard
+        //compute checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
-        return Material(col);
+        return Material(col,vec3(0.2,0.2,0.2), vec3(0.9, 0.9, 0.9), 50.);
+
     }
-    return Material(vec3(0));
+    return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50.);
 }
 
 //fonction résolution equation du second degré:
@@ -384,6 +405,7 @@ bool IntersectCube(Ray ray, Cube cb, out Hit x){
     
 }
 
+
 // Sphere intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -473,16 +495,42 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
                 //normale.z = tor.c.z;
                 
                 
-                normale.x = p.x * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
-                normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                //normale.x = p.x  * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                //normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                //normale.z = tor.c.z;
+                
+                
+                /*************************/
+                //vec3 _P = normalize(vec3(p.x, p.y, tor.c.z));
+                
+                //normale.x = (_P.x - tor.c.x)  * (tor._R / sqrt(pow(_P.x - tor.c.x, 2.0) + pow(_P.y - tor.c.y, 2.0) ));
+                //normale.y = (_P.y - tor.c.y) * (tor._R / sqrt(pow(_P.x - tor.c.x, 2.0) + pow(_P.y - tor.c.y, 2.0) ));
+                //normale.z = tor.c.z;
+                /*************************/
+                
+                normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
+                normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
                 normale.z = tor.c.z;
                 
-                //normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
-                //normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
-                //normale.z = 0.;
                 
+                vec3 nor;
+                nor.x = p.x - (p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0))));
+                nor.x = p.y - (p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0))));
+                nor.z = p.z - tor.c.z;
                 
-                x=Hit(t,normalize(p - normale),tor.i);
+                //vec3 _P = normalize(vec3(p.x, p.y, 0));
+                //vec3 q = ((_P - tor.c) / normalize(_P - tor.c) ) * tor._R + tor.c;
+                
+                vec3 zab;
+                vec3 rab = normalize(vec3(p.x, p.y, tor.c.z));
+                
+                zab.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0) /*+ pow(tor.c.z, 2.0)*/ )); 
+                zab.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0) /*+ pow(tor.c.z, 2.0)*/ )); 
+                zab.z = tor.c.z;
+                zab.z=0.;
+                
+                //x=Hit(t,normalize(nor),tor.i);
+                x=Hit(t,normalize(p-zab),tor.i);
 
                 return true;
                 
@@ -517,6 +565,7 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
+// Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
 bool Intersect(Ray ray,out Hit x)
 {
     // Spheres
@@ -533,8 +582,8 @@ bool Intersect(Ray ray,out Hit x)
     const Cube cb = Cube(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
-    const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
-    const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
+    //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
+    //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
     x=Hit(1000.,vec3(0),-1);
     Hit current;
@@ -543,7 +592,6 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    
     if(IntersectSphere(ray,sph2,current)&&current.t<x.t){
         x=current;
         ret=true;
@@ -568,14 +616,14 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    if(IntersectTorus(ray,tor2,current)&&current.t<x.t){
+/*     if(IntersectTorus(ray,tor2,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
     if(IntersectTorus(ray,tor3,current)&&current.t<x.t){
         x=current;
         ret=true;
-    }
+    } */
     return ret;
 }
 
@@ -599,13 +647,64 @@ mat3 setCamera(in vec3 ro,in vec3 ta)
 // Apply color model
 // m : Material
 // n : normal
-vec3 Color(Material m,vec3 n)
+vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
 {
-    vec3 light=normalize(vec3(1,1,1));
+    Light lightTab[2];
+    lightTab[0].lightPos = vec3(3,4,9);
+    lightTab[0].lightColor = vec3(1,1,1);
     
-    float diff=clamp(dot(n,light),0.,1.);
-    vec3 col=m.d*diff+vec3(.2,.2,.2);
-    return col;
+    lightTab[1].lightPos = vec3(0,4,5);
+    lightTab[1].lightColor = vec3(1,1,1);
+
+    vec3 lightDirection1 = normalize(lightTab[0].lightPos - p);
+    vec3 lightDirection2 = normalize(lightTab[1].lightPos - p);
+
+    Hit osef;
+    Ray r1 = Ray(p + n * 0.001, lightDirection1); // le rayon que j'envoie de point d'intersect de mon objet
+    Ray r2 = Ray(p + n * 0.001, lightDirection2); // le rayon que j'envoie de point d'intersect de mon objet
+    vec3 finalColor1;
+    vec3 finalColor2;
+
+    // Je dois calculer la lumiere spectrale et la lumiere diffus
+    // Éclairage spéculaire             
+    vec3 viewDir = normalize(camera.o - p); // Direction de la caméra  
+
+    if(Intersect(r1, osef)){
+        finalColor1 = vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
+    } else {
+        vec3 reflectDir1 = reflect(-lightDirection1, n); // Direction de réflexion de lumiere depuis mon objet   
+        float spec1 = pow(max(dot(viewDir, reflectDir1), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+        vec3 specularColor1 = m.s * spec1 * lightTab[0].lightColor;             // Éclairage diffus             
+        float diff1 = max(dot(n, lightDirection1), 0.0); // Composante diffuse     
+        vec3 diffuseColor1 = m.d * diff1 * lightTab[0].lightColor;
+         // Couleur a retourner
+        finalColor1 = specularColor1 + diffuseColor1;
+    }
+    if(Intersect(r2, osef)){
+       finalColor2 =vec3(0.0); //je retourne la couleur de mon ombre (noir)
+    } else{
+        vec3 reflectDir2 = reflect(-lightDirection2, n); // Direction de réflexion de lumiere depuis mon objet   
+        float spec2 = pow(max(dot(viewDir, reflectDir2), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+        vec3 specularColor2 = m.s * spec2 * lightTab[1].lightColor;             // Éclairage diffus             
+        float diff2 = max(dot(n, lightDirection2), 0.0); // Composante diffuse     
+        vec3 diffuseColor2 = m.d * diff2 * lightTab[1].lightColor;
+        // Couleur a retourner
+        finalColor2 = specularColor2 + diffuseColor2;
+    }
+        
+    return finalColor1 + finalColor2;
+
+    // Hit x;
+    // vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
+
+    // if (!Intersect(Ray(p+n*0.01, light), x)) {
+    //     float diff = clamp(dot(n,light),0.,1.); // diff pour diffus
+    //     vec3 col= m.d * diff + vec3(.2,.2,.2);
+    //     return col;
+    // }
+    // else {
+    //     return m.a;
+    // }
 }
 
 // Rendering
@@ -620,7 +719,7 @@ vec3 Shade(Ray ray)
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
         
-        return Color(mat,x.n);
+        return Color(mat,x.n, p, ray);
     }
     else
     {
@@ -639,7 +738,8 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
     vec2 mouse=iMouse.xy/iResolution.xy;
     
     // Ray origin
-    vec3 ro=12.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
+    //défini la position de la cam
+    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
     vec3 ta=vec3(0.,0.,1.5);
     mat3 ca=setCamera(ro,ta);
     
