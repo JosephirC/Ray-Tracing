@@ -24,7 +24,7 @@ struct disc{
     int i ;
 };
 
-struct Cube{
+struct Box{
     vec3 a;
     vec3 b;
     int i;
@@ -350,34 +350,34 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
 }
 
 
-bool IntersectCube(Ray ray, Cube cb, out Hit x){
+bool IntersectBox(Ray ray, Box bx, out Hit x){
     vec3 t0, t1;
     //défini tout les cas de t0 et t1 pour x puis y puis z dans tous les angles de la cam
     if (ray.d.x >= 0.) { 
-        t0.x = (cb.a.x - ray.o.x) / ray.d.x;
-        t1.x = (cb.b.x - ray.o.x) / ray.d.x;
+        t0.x = (bx.a.x - ray.o.x) / ray.d.x;
+        t1.x = (bx.b.x - ray.o.x) / ray.d.x;
     } 
     else { 
-        t0.x = (cb.b.x - ray.o.x) / ray.d.x;
-        t1.x = (cb.a.x - ray.o.x) / ray.d.x;
+        t0.x = (bx.b.x - ray.o.x) / ray.d.x;
+        t1.x = (bx.a.x - ray.o.x) / ray.d.x;
     } 
     
     if (ray.d.y >= 0.) { 
-        t0.y = (cb.a.y - ray.o.y) / ray.d.y;
-        t1.y = (cb.b.y - ray.o.y) / ray.d.y;
+        t0.y = (bx.a.y - ray.o.y) / ray.d.y;
+        t1.y = (bx.b.y - ray.o.y) / ray.d.y;
     } 
     else { 
-        t0.y = (cb.b.y - ray.o.y) / ray.d.y;
-        t1.y = (cb.a.y - ray.o.y) / ray.d.y;
+        t0.y = (bx.b.y - ray.o.y) / ray.d.y;
+        t1.y = (bx.a.y - ray.o.y) / ray.d.y;
     } 
     
     if (ray.d.z >= 0.) { 
-        t0.z = (cb.a.z - ray.o.z) / ray.d.z;
-        t1.z = (cb.b.z - ray.o.z) / ray.d.z;
+        t0.z = (bx.a.z - ray.o.z) / ray.d.z;
+        t1.z = (bx.b.z - ray.o.z) / ray.d.z;
     } 
     else { 
-        t0.z = (cb.b.z - ray.o.z) / ray.d.z;
-        t1.z = (cb.a.z - ray.o.z) / ray.d.z;
+        t0.z = (bx.b.z - ray.o.z) / ray.d.z;
+        t1.z = (bx.a.z - ray.o.z) / ray.d.z;
     }
     //filtre des cas ne touchant pas la boite
     if (t0.x > t1.y || t0.y > t1.x) return false;
@@ -392,17 +392,12 @@ bool IntersectCube(Ray ray, Cube cb, out Hit x){
     float t = (tmin < 0.) ? tmax : tmin;
     if(t>0.){
         vec3 p=Point(ray,t);
-        //le centre du cube
-        vec3 c;
-        if (length(cb.a) < length(cb.b))
-            c = cb.a + cb.b/2.;
-        else
-            c = cb.b + cb.a/2.;
-        x=Hit(t, normalize(p-c),cb.i);
+        //le centre du box
+        vec3 c = (bx.a + bx.b)/2.;
+        x=Hit(t, normalize(p-c),bx.i);
         return true;
     }
     return false;
-    
 }
 
 // Sphere intersection
@@ -552,7 +547,7 @@ bool Intersect(Ray ray,out Hit x)
     
     const disc ds = disc(normalize(vec3(0.,0.,1.)), vec3(3.,3.,1.), 4.,1);
     
-    const Cube cb = Cube(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
+    const Box bx = Box(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
@@ -581,7 +576,7 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }*/
-    if(IntersectCube(ray,cb,current)&&current.t<x.t){
+    if(IntersectBox(ray,bx,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
