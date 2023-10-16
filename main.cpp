@@ -18,13 +18,13 @@ struct Cylinder{
 };
 
 struct disc{
-    vec3 n;
     vec3 p;
+    vec3 n;
     float r;
     int i ;
 };
 
-struct Cube{
+struct Box{
     vec3 a;
     vec3 b;
     int i;
@@ -38,8 +38,8 @@ struct Torus{
 };
 
 struct Plane{
-    vec3 n;// Normal
     vec3 p;// Point
+    vec3 n;// Normal
     int i;// Texture Id
 };
 
@@ -217,7 +217,7 @@ bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x)
 // ray : The ray
 //   x : Returned intersection information
 bool IntersectDisc(Ray ray,disc disc,out Hit x){
-    bool pl = IntersectPlane(ray, Plane(disc.n, disc.p, disc.i), x);
+    bool pl = IntersectPlane(ray, Plane(disc.p, disc.n, disc.i), x);
     if(pl){
         vec3 p=Point(ray, x.t);
         if(length(p-disc.p) < disc.r){
@@ -350,34 +350,34 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
 }
 
 
-bool IntersectCube(Ray ray, Cube cb, out Hit x){
+bool IntersectBox(Ray ray, Box bx, out Hit x){
     vec3 t0, t1;
     //défini tout les cas de t0 et t1 pour x puis y puis z dans tous les angles de la cam
     if (ray.d.x >= 0.) { 
-        t0.x = (cb.a.x - ray.o.x) / ray.d.x;
-        t1.x = (cb.b.x - ray.o.x) / ray.d.x;
+        t0.x = (bx.a.x - ray.o.x) / ray.d.x;
+        t1.x = (bx.b.x - ray.o.x) / ray.d.x;
     } 
     else { 
-        t0.x = (cb.b.x - ray.o.x) / ray.d.x;
-        t1.x = (cb.a.x - ray.o.x) / ray.d.x;
+        t0.x = (bx.b.x - ray.o.x) / ray.d.x;
+        t1.x = (bx.a.x - ray.o.x) / ray.d.x;
     } 
     
     if (ray.d.y >= 0.) { 
-        t0.y = (cb.a.y - ray.o.y) / ray.d.y;
-        t1.y = (cb.b.y - ray.o.y) / ray.d.y;
+        t0.y = (bx.a.y - ray.o.y) / ray.d.y;
+        t1.y = (bx.b.y - ray.o.y) / ray.d.y;
     } 
     else { 
-        t0.y = (cb.b.y - ray.o.y) / ray.d.y;
-        t1.y = (cb.a.y - ray.o.y) / ray.d.y;
+        t0.y = (bx.b.y - ray.o.y) / ray.d.y;
+        t1.y = (bx.a.y - ray.o.y) / ray.d.y;
     } 
     
     if (ray.d.z >= 0.) { 
-        t0.z = (cb.a.z - ray.o.z) / ray.d.z;
-        t1.z = (cb.b.z - ray.o.z) / ray.d.z;
+        t0.z = (bx.a.z - ray.o.z) / ray.d.z;
+        t1.z = (bx.b.z - ray.o.z) / ray.d.z;
     } 
     else { 
-        t0.z = (cb.b.z - ray.o.z) / ray.d.z;
-        t1.z = (cb.a.z - ray.o.z) / ray.d.z;
+        t0.z = (bx.b.z - ray.o.z) / ray.d.z;
+        t1.z = (bx.a.z - ray.o.z) / ray.d.z;
     }
     //filtre des cas ne touchant pas la boite
     if (t0.x > t1.y || t0.y > t1.x) return false;
@@ -392,17 +392,12 @@ bool IntersectCube(Ray ray, Cube cb, out Hit x){
     float t = (tmin < 0.) ? tmax : tmin;
     if(t>0.){
         vec3 p=Point(ray,t);
-        //le centre du cube
-        vec3 c;
-        if (length(cb.a) < length(cb.b))
-            c = cb.a + cb.b/2.;
-        else
-            c = cb.b + cb.a/2.;
-        x=Hit(t, normalize(p-c),cb.i);
+        //le centre du box
+        vec3 c = (bx.a + bx.b)/2.;
+        x=Hit(t, normalize(p-c),bx.i);
         return true;
     }
     return false;
-    
 }
 
 // Sphere intersection
@@ -535,6 +530,55 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
     
 }
 
+Ray Translation(Ray ray, vec3 p) {
+    return Ray(ray.o - p, ray.d);
+}
+
+Ray RotationX(Ray ray, float x){
+    //construire les matrices de rotations
+    mat3 rotationX = mat3(
+        1., 0.      , 0.       ,
+        0., cos(x)  , -sin(x)    ,
+        0., sin(x)  , cos(x)
+    );
+    //ramener à 0
+    Ray rayTmp = ray;
+    //ray.o = vec3(0, 0, 0);
+    //effectuer la rotation
+    ray.o = rotationX * ray.o;
+    ray.d = rotationX * ray.d;
+    //ramener à où c'était
+    //ray = Translation(ray, rayTmp.o);
+    return ray;
+}
+/* Ray Rotation(Ray ray, vec3 r) {
+    //construire les matrices de rotations
+    mat3 rotationX = mat3(
+        1., 0.      , 0.       ,
+        0., cos(r.x), -sin(r.x),
+        0., sin(r.x), cos(r.x)
+    );
+    mat3 rotationY = mat3(
+        cos(r.y), 0., -sin(r.y),
+        0.      , 1., 0.       ,
+        sin(r.y), 0., cos(r.y)
+    );
+    mat3 rotationZ = mat3(
+        cos(r.z), -sin(r.z), 0.,
+        sin(r.z), cos(r.z) , 0.,
+        0.      , 0.       , 1.
+    );
+    //ramener à 0
+    Ray rayTmp = ray;
+    ray.o = ray.o - ray.o;
+    //effectuer la rotation
+    ray.o = rotationZ * rotationY * rotationX * ray.o;
+    ray.d = rotationZ * rotationY * rotationX * ray.d;
+    //ramener à où c'était
+    ray = Translation(ray, rayTmp.o);
+    return ray;
+} */
+
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -544,24 +588,27 @@ bool Intersect(Ray ray,out Hit x)
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
     const Sphere sph2=Sphere(vec3(2.,0.,2.),1.,1);
-    const Plane pl=Plane(vec3(0.,0.,1.),vec3(0.,0.,0.),0);
+    const Plane pl=Plane(vec3(0.,0.,0.), vec3(0.,0.,1.),0);
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
     
     const Cylinder cyll1 = Cylinder(vec3(3.,2.,2.), vec3(2., 4., 5.), 1. ,1);
     
-    const disc ds = disc(normalize(vec3(0.,0.,1.)), vec3(3.,3.,1.), 4.,1);
+    const disc ds = disc(vec3(3.,3.,1.), normalize(vec3(0.,2.,1.)), 4.,1);
     
-    const Cube cb = Cube(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
+    const Box bx = Box(vec3(-5., -5., 0.), vec3(-3., 0., 4.), 1);
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
+    Ray Tr1 = Translation(ray, vec3(0.,2.,3.));
+    //Ray rot1 = Rotation(ray, vec3(iTime, 0., 0.));
+    Ray rot2 = RotationX(ray, iTime);
     x=Hit(1000.,vec3(0),-1);
     Hit current;
     bool ret=false;
-    if(IntersectSphere(ray,sph1,current)&&current.t<x.t){
+    if(IntersectSphere(Tr1,sph1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
@@ -573,15 +620,19 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    if(IntersectEllipsoide(ray,ellip1,current)&&current.t<x.t){
+    if(IntersectEllipsoide(Tr1,ellip1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
+    /* if(IntersectDisc(ray,ds,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    } */
     /*if(IntersectCylinder(ray,cyll1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }*/
-    if(IntersectCube(ray,cb,current)&&current.t<x.t){
+    if(IntersectBox(ray ,bx,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
