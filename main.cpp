@@ -534,6 +534,51 @@ Ray Translation(Ray ray, vec3 p) {
     return Ray(ray.o - p, ray.d);
 }
 
+Ray RotationX(Ray ray, float x){
+    //construire les matrices de rotations
+    mat3 rotationX = mat3(
+        1., 0.      , 0.       ,
+        0., cos(x)  , -sin(x)    ,
+        0., sin(x)  , cos(x)
+    );
+    //ramener à 0
+    Ray rayTmp = ray;
+    //ray.o = vec3(0, 0, 0);
+    //effectuer la rotation
+    ray.o = rotationX * ray.o;
+    ray.d = rotationX * ray.d;
+    //ramener à où c'était
+    //ray = Translation(ray, rayTmp.o);
+    return ray;
+}
+/* Ray Rotation(Ray ray, vec3 r) {
+    //construire les matrices de rotations
+    mat3 rotationX = mat3(
+        1., 0.      , 0.       ,
+        0., cos(r.x), -sin(r.x),
+        0., sin(r.x), cos(r.x)
+    );
+    mat3 rotationY = mat3(
+        cos(r.y), 0., -sin(r.y),
+        0.      , 1., 0.       ,
+        sin(r.y), 0., cos(r.y)
+    );
+    mat3 rotationZ = mat3(
+        cos(r.z), -sin(r.z), 0.,
+        sin(r.z), cos(r.z) , 0.,
+        0.      , 0.       , 1.
+    );
+    //ramener à 0
+    Ray rayTmp = ray;
+    ray.o = ray.o - ray.o;
+    //effectuer la rotation
+    ray.o = rotationZ * rotationY * rotationX * ray.o;
+    ray.d = rotationZ * rotationY * rotationX * ray.d;
+    //ramener à où c'était
+    ray = Translation(ray, rayTmp.o);
+    return ray;
+} */
+
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -558,6 +603,8 @@ bool Intersect(Ray ray,out Hit x)
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
     Ray Tr1 = Translation(ray, vec3(0.,2.,3.));
+    //Ray rot1 = Rotation(ray, vec3(iTime, 0., 0.));
+    Ray rot2 = RotationX(ray, iTime);
     x=Hit(1000.,vec3(0),-1);
     Hit current;
     bool ret=false;
@@ -573,15 +620,19 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    if(IntersectEllipsoide(ray,ellip1,current)&&current.t<x.t){
+    if(IntersectEllipsoide(Tr1,ellip1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
+    /* if(IntersectDisc(ray,ds,current)&&current.t<x.t){
+        x=current;
+        ret=true;
+    } */
     /*if(IntersectCylinder(ray,cyll1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }*/
-    if(IntersectBox(ray,bx,current)&&current.t<x.t){
+    if(IntersectBox(ray ,bx,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
