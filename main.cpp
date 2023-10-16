@@ -530,6 +530,10 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
     
 }
 
+Ray Translation(Ray ray, vec3 p) {
+    return Ray(ray.o - p, ray.d);
+}
+
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -553,10 +557,11 @@ bool Intersect(Ray ray,out Hit x)
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
+    Ray Tr1 = Translation(ray, vec3(0.,2.,3.));
     x=Hit(1000.,vec3(0),-1);
     Hit current;
     bool ret=false;
-    if(IntersectSphere(ray,sph1,current)&&current.t<x.t){
+    if(IntersectSphere(Tr1,sph1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
