@@ -18,8 +18,8 @@ struct Cylinder{
 };
 
 struct disc{
-    vec3 n;
     vec3 p;
+    vec3 n;
     float r;
     int i ;
 };
@@ -38,8 +38,8 @@ struct Torus{
 };
 
 struct Plane{
-    vec3 n;// Normal
     vec3 p;// Point
+    vec3 n;// Normal
     int i;// Texture Id
 };
 
@@ -217,7 +217,7 @@ bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x)
 // ray : The ray
 //   x : Returned intersection information
 bool IntersectDisc(Ray ray,disc disc,out Hit x){
-    bool pl = IntersectPlane(ray, Plane(disc.n, disc.p, disc.i), x);
+    bool pl = IntersectPlane(ray, Plane(disc.p, disc.n, disc.i), x);
     if(pl){
         vec3 p=Point(ray, x.t);
         if(length(p-disc.p) < disc.r){
@@ -588,15 +588,15 @@ bool Intersect(Ray ray,out Hit x)
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
     const Sphere sph2=Sphere(vec3(2.,0.,2.),1.,1);
-    const Plane pl=Plane(vec3(0.,0.,1.),vec3(0.,0.,0.),0);
+    const Plane pl=Plane(vec3(0.,0.,0.), vec3(0.,0.,1.),0);
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
     
     const Cylinder cyll1 = Cylinder(vec3(3.,2.,2.), vec3(2., 4., 5.), 1. ,1);
     
-    const disc ds = disc(normalize(vec3(0.,0.,1.)), vec3(3.,3.,1.), 4.,1);
+    const disc ds = disc(vec3(3.,3.,1.), normalize(vec3(0.,2.,1.)), 4.,1);
     
-    const Box bx = Box(vec3(-5., -5., 0.), vec3(-2., 0., 4.), 1);
+    const Box bx = Box(vec3(-5., -5., 0.), vec3(-3., 0., 4.), 1);
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
