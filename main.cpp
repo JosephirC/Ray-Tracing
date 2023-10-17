@@ -17,11 +17,18 @@ struct Cylinder{
     int i;// Texture Id
 };
 
-struct disc{
-    vec3 p;
+struct Disc{
     vec3 n;
+    vec3 p;
     float r;
     int i ;
+};
+
+struct Capsule{
+    vec3 a; 
+    vec3 b; 
+    float r; 
+    int i;
 };
 
 struct Box{
@@ -38,8 +45,8 @@ struct Torus{
 };
 
 struct Plane{
-    vec3 p;// Point
     vec3 n;// Normal
+    vec3 p;// Point
     int i;// Texture Id
 };
 
@@ -213,11 +220,11 @@ bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x)
     return false;
 }
 
-// disc intersection
+// Disc intersection
 // ray : The ray
 //   x : Returned intersection information
-bool IntersectDisc(Ray ray,disc disc,out Hit x){
-    bool pl = IntersectPlane(ray, Plane(disc.p, disc.n, disc.i), x);
+bool IntersectDisc(Ray ray,Disc disc,out Hit x){
+    bool pl = IntersectPlane(ray, Plane(disc.n, disc.p, disc.i), x);
     if(pl){
         vec3 p=Point(ray, x.t);
         if(length(p-disc.p) < disc.r){
@@ -232,8 +239,8 @@ bool IntersectCylinder(Ray ray, Cylinder cyl, out Hit x){
     x=Hit(1000.,vec3(0),-1);
     Hit x_;
     
-    disc ds1 = disc(normalize(cyl.b-cyl.a), cyl.a, cyl.r, cyl.i);
-    disc ds2 = disc(normalize(cyl.b-cyl.a), cyl.b, cyl.r, cyl.i);
+    Disc ds1 = Disc(normalize(cyl.b-cyl.a), cyl.a, cyl.r, cyl.i);
+    Disc ds2 = Disc(normalize(cyl.b-cyl.a), cyl.b, cyl.r, cyl.i);
     Sphere sph2 = Sphere(cyl.b, cyl.r, cyl.i);
     bool b1 = IntersectDisc(ray, ds1, x_);
     if(b1 && x_.t < x.t){
@@ -400,6 +407,7 @@ bool IntersectBox(Ray ray, Box bx, out Hit x){
     return false;
 }
 
+
 // Sphere intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -489,16 +497,42 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et 
                 //normale.z = tor.c.z;
                 
                 
-                normale.x = p.x * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
-                normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                //normale.x = p.x  * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                //normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
+                //normale.z = tor.c.z;
+                
+                
+                /*************************/
+                //vec3 _P = normalize(vec3(p.x, p.y, tor.c.z));
+                
+                //normale.x = (_P.x - tor.c.x)  * (tor._R / sqrt(pow(_P.x - tor.c.x, 2.0) + pow(_P.y - tor.c.y, 2.0) ));
+                //normale.y = (_P.y - tor.c.y) * (tor._R / sqrt(pow(_P.x - tor.c.x, 2.0) + pow(_P.y - tor.c.y, 2.0) ));
+                //normale.z = tor.c.z;
+                /*************************/
+                
+                normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
+                normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
                 normale.z = tor.c.z;
                 
-                //normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
-                //normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
-                //normale.z = 0.;
                 
+                vec3 nor;
+                nor.x = p.x - (p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0))));
+                nor.x = p.y - (p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0))));
+                nor.z = p.z - tor.c.z;
                 
-                x=Hit(t,normalize(p - normale),tor.i);
+                //vec3 _P = normalize(vec3(p.x, p.y, 0));
+                //vec3 q = ((_P - tor.c) / normalize(_P - tor.c) ) * tor._R + tor.c;
+                
+                vec3 zab;
+                vec3 rab = normalize(vec3(p.x, p.y, tor.c.z));
+                
+                zab.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0) /*+ pow(tor.c.z, 2.0)*/ )); 
+                zab.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0) /*+ pow(tor.c.z, 2.0)*/ )); 
+                zab.z = tor.c.z;
+                zab.z=0.;
+                
+                //x=Hit(t,normalize(nor),tor.i);
+                x=Hit(t,normalize(p-zab),tor.i);
 
                 return true;
                 
@@ -588,13 +622,13 @@ bool Intersect(Ray ray,out Hit x)
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
     const Sphere sph2=Sphere(vec3(2.,0.,2.),1.,1);
-    const Plane pl=Plane(vec3(0.,0.,0.), vec3(0.,0.,1.),0);
+    const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
     
     const Cylinder cyll1 = Cylinder(vec3(3.,2.,2.), vec3(2., 4., 5.), 1. ,1);
     
-    const disc ds = disc(vec3(3.,3.,1.), normalize(vec3(0.,2.,1.)), 4.,1);
+    const Disc ds = Disc(vec3(3.,3.,1.), normalize(vec3(0.,2.,1.)), 4.,1);
     
     const Box bx = Box(vec3(-5., -5., 0.), vec3(-3., 0., 4.), 1);
 
@@ -650,6 +684,76 @@ bool Intersect(Ray ray,out Hit x)
     } */
     return ret;
 }
+
+
+// Pour faire l’occlusion ambiante, vous aurez besoin de générer des directions aléatoires sur une demi-sphère. 
+// Un algorithme simple consiste à tirer des points aléatoire sur une sphère (donc des direction unitaires).
+// Si la direction n’est pas dans la direction du vecteur n prescrit, on inverse la direction (d’où une hémisphère).
+
+// Hemisphere direction
+vec3 Hemisphere(int seed,vec3 n)
+{
+    float a=fract(sin(176.19*float(seed)));// Uniform randoms
+    float b=fract(sin(164.19*float(seed)));
+    float u=2.*3.1415*a;// Random angle
+    float v=acos(2.*b-1.);// Arcosine distribution to compensate for poles
+    vec3 d=vec3(cos(u)*cos(v),sin(u)*cos(v),sin(v));// Direction
+    if(dot(d,n)<0.){d=-d;}// Hemishpere
+	//....	
+
+
+    return d;
+}
+
+
+// Pour faire une séquence aléatoire de nombre réels entre 0 et 1 à partir d’entiers variant entre 0 et n, il suffit de prendre 
+// la partie fractionnaire d’un sinus sur un grande plage. C’est comme ça que sont calculés les nombres aléatoires a et b.
+//Le début de l’occlusion ambiante s’écrit naturellement comme suit pour générer des directions :
+
+// Ambient occlusion
+// p : Point
+// n : Normal
+// N : Number of samples
+float AmbientOcclusion(vec3 p,vec3 n,int N)
+{
+    //if(a==0){return 1.;}
+   
+    float ao=0.;
+    for(int i=0;i<N;i++)
+    {
+        vec3 d= Hemisphere (i,n); // d dans la demi-sphere
+		// ......
+    }
+    return 0.; // a enlever
+}
+
+
+// Fonction pour calculer l'occlusion ambiante.
+float ComputeAmbientOcclusion(vec3 p, vec3 n, vec3 rayDirection/*, const std::vector<SceneObject>& objects*/) {
+    float occlusion = 0.0f;
+    int numSamples = 64; // Le nombre d'échantillons de rayons à lancer.
+
+    for (int i = 0; i < numSamples; ++i) {
+        // Générer une direction de rayon aléatoire dans un cône autour de la normale.
+        
+        // vec3 randomDirection = /* Générer une direction de rayon aléatoire */;
+
+        // Lancer un rayon depuis le point p dans la direction du rayon aléatoire.
+        vec3 rayOrigin = p + 0.001f * n; // Pour éviter les intersections avec la surface elle-même.
+        // Effectuer une intersection rayon-objet et vérifier s'il y a une intersection avec un objet de la scène.
+
+        // Si le rayon interagit avec un objet, réduire l'occlusion.
+        // if (/* Vérifiez s'il y a une intersection avec un objet */) {
+        //     occlusion += 1.0f;
+        // }
+    }
+
+    // Moyenne des échantillons et normalisation.
+    // occlusion = 1.0f - (occlusion / numSamples);
+    
+    return occlusion;
+}
+
 
 vec3 Background(vec3 rd)
 {
