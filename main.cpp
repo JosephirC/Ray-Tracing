@@ -583,7 +583,7 @@ Ray RotationX(Ray ray, float x){
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
-bool Intersect(Ray ray,out Hit x)
+bool Intersect(Ray ray,inout Hit x)
 {
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
@@ -602,10 +602,10 @@ bool Intersect(Ray ray,out Hit x)
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
     
-    Ray Tr1 = Translation(ray, vec3(0.,2.,3.));
+    Ray Tr1 = Translation(ray, vec3(0.,0.,2.));
     //Ray rot1 = Rotation(ray, vec3(iTime, 0., 0.));
-    Ray rot2 = RotationX(ray, iTime);
-    x=Hit(1000.,vec3(0),-1);
+    //Ray rot2 = RotationX(ray, iTime);
+
     Hit current;
     bool ret=false;
     if(IntersectSphere(Tr1,sph1,current)&&current.t<x.t){
@@ -620,7 +620,7 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }
-    if(IntersectEllipsoide(Tr1,ellip1,current)&&current.t<x.t){
+    if(IntersectEllipsoide(ray,ellip1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
@@ -632,7 +632,7 @@ bool Intersect(Ray ray,out Hit x)
         x=current;
         ret=true;
     }*/
-    if(IntersectBox(ray ,bx,current)&&current.t<x.t){
+    if(IntersectBox(Tr1 ,bx,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
@@ -674,16 +674,15 @@ mat3 setCamera(in vec3 ro,in vec3 ta)
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
 {
     Light lightTab[2];
-    lightTab[0].lightPos = vec3(3,4,9);
+    lightTab[0].lightPos = vec3(3,4,5);
     lightTab[0].lightColor = vec3(1,1,1);
     
-    lightTab[1].lightPos = vec3(0,4,5);
+    lightTab[1].lightPos = vec3(0,4,9);
     lightTab[1].lightColor = vec3(1,1,1);
 
     vec3 lightDirection1 = normalize(lightTab[0].lightPos - p);
     vec3 lightDirection2 = normalize(lightTab[1].lightPos - p);
 
-    Hit osef;
     Ray r1 = Ray(p + n * 0.001, lightDirection1); // le rayon que j'envoie de point d'intersect de mon objet
     Ray r2 = Ray(p + n * 0.001, lightDirection2); // le rayon que j'envoie de point d'intersect de mon objet
     vec3 finalColor1;
@@ -692,8 +691,8 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
     // Je dois calculer la lumiere spectrale et la lumiere diffus
     // Éclairage spéculaire             
     vec3 viewDir = normalize(camera.o - p); // Direction de la caméra  
-
-    if(Intersect(r1, osef)){
+    Hit osef1 = Hit(length(lightTab[0].lightPos-p),vec3(0),-1);
+    if(Intersect(r1, osef1)){
         finalColor1 = vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
     } else {
         vec3 reflectDir1 = reflect(-lightDirection1, n); // Direction de réflexion de lumiere depuis mon objet   
@@ -704,7 +703,8 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
          // Couleur a retourner
         finalColor1 = specularColor1 + diffuseColor1;
     }
-    if(Intersect(r2, osef)){
+    Hit osef2 = Hit(length(lightTab[1].lightPos-p),vec3(0),-1);
+    if(Intersect(r2, osef2)){
        finalColor2 =vec3(0.0); //je retourne la couleur de mon ombre (noir)
     } else{
         vec3 reflectDir2 = reflect(-lightDirection2, n); // Direction de réflexion de lumiere depuis mon objet   
@@ -735,14 +735,13 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
 vec3 Shade(Ray ray)
 {
     // Intersect contains all the geo detection
-    Hit x;
+    Hit x = Hit(1000.,vec3(0),-1);
     bool idx=Intersect(ray,x);
-    
+
     if(idx)
     {
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
-        
         return Color(mat,x.n, p, ray);
     }
     else
