@@ -1,50 +1,29 @@
-<<<<<<< HEAD
-struct Sphere{
-=======
 struct Sphere {
->>>>>>> youssef
     vec3 c;// Center
     float r;// Radius
     int i;// Texture Id
 };
 
-<<<<<<< HEAD
-struct Ellipsoide{
-=======
 struct Ellipsoide {
->>>>>>> youssef
     vec3 c; // Center
     vec3 r; // Radius
     int i; // Texture Id
 };
 
-<<<<<<< HEAD
-struct Cylinder{
-=======
 struct Cylinder {
->>>>>>> youssef
     vec3 a;// Bottom Center
     vec3 b;// Middle Center
     float r;// Radius
     int i;// Texture Id
 };
 
-<<<<<<< HEAD
-struct disc{
-    vec3 p;
-    vec3 n;
-=======
 struct Disc {
     vec3 n;
     vec3 p;
->>>>>>> youssef
     float r;
     int i ;
 };
 
-<<<<<<< HEAD
-struct Box{
-=======
 struct Capsule {
     vec3 a;// Bottom Center
     vec3 b;// Middle Center
@@ -53,32 +32,18 @@ struct Capsule {
 };
 
 struct Box {
->>>>>>> youssef
     vec3 a;
     vec3 b;
     int i;
 };
 
-<<<<<<< HEAD
-struct Torus{
-=======
 struct Torus {
->>>>>>> youssef
     vec3 c; // Center
     float _R; // Radius between center and the donut cirlce
     float _r; // Radius between the donut circle and the outer circle
     int i; // Texture Id
 };
 
-<<<<<<< HEAD
-struct Plane{
-    vec3 p;// Point
-    vec3 n;// Normal
-    int i;// Texture Id
-};
-
-struct Hit{
-=======
 struct Plane {
     vec3 n;// Normal
     vec3 p;// Point
@@ -86,41 +51,21 @@ struct Plane {
 };
 
 struct Hit {
->>>>>>> youssef
     float t;// Intersection depth
     vec3 n;// Normal
     int i;// Texture Id
 };
 
-<<<<<<< HEAD
-struct Ray{
-=======
 struct Ray {
->>>>>>> youssef
     vec3 o;// Origin
     vec3 d;// Direction
 };
 
-<<<<<<< HEAD
-struct Light{
-=======
 struct Light {
->>>>>>> youssef
     vec3 lightColor;//color
     vec3 lightPos;//position
 };
 
-<<<<<<< HEAD
-struct Scene{
-    int nbSphere, nbCylinder, nbCapsule, nbCube, nbTorus, nbEllipsoide, nbLight;
-    Sphere tabSph[10];
-    Light tabLight[10];
-    Cylinder tabCyl[10];
-};
-
-struct Material
-{
-=======
 struct Scene {
     mat3 camera; // Camera position on the scene
 
@@ -149,19 +94,13 @@ struct Scene {
 };
 
 struct Material {
->>>>>>> youssef
     vec3 d;// Diffuse
     vec3 a;//ambiant
     vec3 s;//specular
     float coef_s; // reflection coef
 };
 
-<<<<<<< HEAD
-float Checkers(in vec2 p)
-{
-=======
 float Checkers(in vec2 p) {
->>>>>>> youssef
     // Filter kernel
     vec2 w=fwidth(p)+.001;
     // Box box filter
@@ -171,33 +110,13 @@ float Checkers(in vec2 p) {
 }
 
 // Compute point on ray
-<<<<<<< HEAD
-vec3 Point(Ray ray,float t)
-{
-=======
 vec3 Point(Ray ray,float t) {
->>>>>>> youssef
     return ray.o+t*ray.d;
 }
 
 // Compute color
 // i : Texture index
 // p : Point
-<<<<<<< HEAD
-Material Texture(vec3 p,int i)
-{
-    if(i==1)
-    {
-        // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
-        return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
-    }
-    else if(i==2)
-    {
-        return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
-    }
-    else if(i==0)
-    {
-=======
 Material Texture(vec3 p,int i) {
     if (i==1) {
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
@@ -207,7 +126,6 @@ Material Texture(vec3 p,int i) {
         return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if (i==0) {
->>>>>>> youssef
         //compute checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
@@ -218,20 +136,11 @@ Material Texture(vec3 p,int i) {
 }
 
 //fonction résolution equation du second degré:
-<<<<<<< HEAD
-float solvRoots(float a, float b, float c){
-    float t;
-    //on calcul le déterminant d pour trouver les racine de l'équation
-    float d = b*b - 4.*a*c;
-    if(d>0.)
-    {
-=======
 float solvRoots(float a, float b, float c) {
     float t;
     //on calcul le déterminant d pour trouver les racine de l'équation
     float d = b*b - 4.*a*c;
     if (d>0.){
->>>>>>> youssef
         float t1 = (-b - sqrt(d)) / (2.0*a);
         float t2 = (-b + sqrt(d)) / (2.0*a);
         float t = min(t1, t2);
@@ -242,81 +151,42 @@ float solvRoots(float a, float b, float c) {
 // Sphere intersection
 // ray : The ray
 //   x : Returned intersection information
-<<<<<<< HEAD
-bool IntersectSphere(Ray ray,Sphere sph,out Hit x)
-{
-=======
 bool IntersectSphere(Ray ray,Sphere sph,out Hit x) {
->>>>>>> youssef
     vec3 oc=ray.o-sph.c;
     float b=dot(oc,ray.d);
     float c=dot(oc,oc)-sph.r*sph.r;
     float d=b*b-c;
-<<<<<<< HEAD
-    if(d>0.)
-    {
-        float t=-b-sqrt(d);
-        if(t>0.)
-        {
-            vec3 p=Point(ray,t);
-            x=Hit(t,normalize(p-sph.c),sph.i);
-            
-=======
     if (d>0.){
         float t=-b-sqrt(d);
         if (t>0.){
             vec3 p=Point(ray,t);
             x=Hit(t,normalize(p-sph.c),sph.i); 
->>>>>>> youssef
             return true;
         }
     }
     return false;
-<<<<<<< HEAD
-    
-=======
->>>>>>> youssef
 }
 
 // Plane intersection
 // ray : The ray
 //   x : Returned intersection information
-<<<<<<< HEAD
-bool IntersectPlane(Ray ray,Plane pl,out Hit x)
-{
-    float t=-dot(ray.o-pl.p,pl.n)/dot(ray.d,pl.n);
-    if(t>0.)
-    {
-        
-=======
 bool IntersectPlane(Ray ray,Plane pl,out Hit x) {
     float t=-dot(ray.o-pl.p,pl.n)/dot(ray.d,pl.n);
     if (t>0.){
->>>>>>> youssef
         x=Hit(t,vec3(0,0,1),0);
         return true;
     }
     return false;
 }
 
-<<<<<<< HEAD
-// Val
-bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x){
-=======
 bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x) {
->>>>>>> youssef
     vec3 oc=ray.o-ellip.c;
     float a = dot((ray.d/ellip.r),(ray.d/ellip.r));
     float b = 2.0*dot((oc/ellip.r), (ray.d/ellip.r));
     float c = dot((oc/ellip.r), (oc/ellip.r)) - dot(ellip.r, ellip.r);
 
     float t = solvRoots(a, b, c);
-<<<<<<< HEAD
-    if(t>0.)
-    {
-=======
     if (t>0.) {
->>>>>>> youssef
         vec3 p=Point(ray,t);
         //vec3 normal = normalize( (p-ellip.c) / dot(ellip.r, ellip.r));
           
@@ -330,12 +200,7 @@ bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x) {
 // Cylinder intersection
 // ray : The ray
 //   x : Returned intersection information
-<<<<<<< HEAD
-bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x)
-{
-=======
 bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x) {
->>>>>>> youssef
     vec3 oa = ray.o-cyl.a;
     vec3 u = normalize(cyl.b - cyl.a);
     
@@ -344,19 +209,11 @@ bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x) {
     float c = dot(oa, oa) - dot(oa, u)*dot(oa, u) - cyl.r*cyl.r;
     
     float t = solvRoots(a, b, c);
-<<<<<<< HEAD
-    if(t>0.){
-        vec3 p=Point(ray,t);
-        float v = dot(p-cyl.a, u);
-        vec3 h = cyl.a + v*u;
-        if (v>=0. && v<= length(cyl.b-cyl.a)){
-=======
     if (t>0.) {
         vec3 p=Point(ray,t);
         float v = dot(p-cyl.a, u);
         vec3 h = cyl.a + v*u;
         if (v>=0. && v<= length(cyl.b-cyl.a)) {
->>>>>>> youssef
             x=Hit(t,normalize(p-h),cyl.i);
             return true;
         }
@@ -364,16 +221,6 @@ bool IntersectCylinderBase(Ray ray,Cylinder cyl,out Hit x) {
     return false;
 }
 
-<<<<<<< HEAD
-// disc intersection
-// ray : The ray
-//   x : Returned intersection information
-bool IntersectDisc(Ray ray,disc disc,out Hit x){
-    bool pl = IntersectPlane(ray, Plane(disc.p, disc.n, disc.i), x);
-    if(pl){
-        vec3 p=Point(ray, x.t);
-        if(length(p-disc.p) < disc.r){
-=======
 // Disc intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -382,7 +229,6 @@ bool IntersectDisc(Ray ray,Disc disc,out Hit x) {
     if (pl) {
         vec3 p=Point(ray, x.t);
         if (length(p-disc.p) < disc.r) {
->>>>>>> youssef
             x = Hit(x.t, disc.n, disc.i);
             return true;
         }
@@ -390,48 +236,6 @@ bool IntersectDisc(Ray ray,Disc disc,out Hit x) {
     return false;
 }
 
-<<<<<<< HEAD
-bool IntersectCylinder(Ray ray, Cylinder cyl, out Hit x){
-    x=Hit(1000.,vec3(0),-1);
-    Hit x_;
-    
-    disc ds1 = disc(normalize(cyl.b-cyl.a), cyl.a, cyl.r, cyl.i);
-    disc ds2 = disc(normalize(cyl.b-cyl.a), cyl.b, cyl.r, cyl.i);
-    Sphere sph2 = Sphere(cyl.b, cyl.r, cyl.i);
-    bool b1 = IntersectDisc(ray, ds1, x_);
-    if(b1 && x_.t < x.t){
-        x.t=x_.t;
-    }
-    bool b2 = IntersectDisc(ray, ds2, x_);
-    if(b2 && x_.t < x.t){
-        x.t=x_.t;
-    }
-    bool corp = IntersectCylinderBase(ray, cyl, x_);
-    if(corp && x_.t < x.t){
-        x=x_;
-    }
-    return b1 || corp || b2;  
-}
-
-bool IntersectCapsule(Ray ray, Cylinder cyl, out Hit x){
-    x=Hit(1000.,vec3(0),-1);
-    Hit x_;
-    Sphere sph1 = Sphere(cyl.a, cyl.r, cyl.i);
-    Sphere sph2 = Sphere(cyl.b, cyl.r, cyl.i);
-    bool b1 = IntersectSphere(ray, sph1, x_);
-    if(b1 && x_.t < x.t){
-        x=x_;
-    }
-    bool b2 = IntersectSphere(ray, sph2, x_);
-    if(b2 && x_.t < x.t){
-        x=x_;
-    }
-    bool corp = IntersectCylinderBase(ray, cyl, x_);
-    if(corp && x_.t < x.t){
-        x=x_;
-    }
-    return b1 || corp || b2;  
-=======
 bool IntersectCylinder(Ray ray, Cylinder cyl, out Hit x) {
     x=Hit(1000.,vec3(0),-1);
     Hit x_;
@@ -477,7 +281,6 @@ bool IntersectCapsule(Ray ray, Capsule cap, out Hit x) {
         x=x_;
     }
     return b1 || body || b2;  
->>>>>>> youssef
 }
 
 float cbrt(in float x) { return sign(x) * pow(abs(x), 1.0 / 3.0); }
@@ -520,11 +323,7 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
 
     // Newton iteration to fix numerical problems (using Horners method)
     // Suggested by @NinjaKoala
-<<<<<<< HEAD
-    for(int i=0; i < 2; i++) {
-=======
     for (int i=0; i < 2; i++) {
->>>>>>> youssef
         float a_2 = ra + lambda;
         float a_1 = rb + lambda * a_2;
         float b_2 = a_2 + lambda;
@@ -563,12 +362,7 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
     return n;
 }
 
-<<<<<<< HEAD
-
-bool IntersectBox(Ray ray, Box bx, out Hit x){
-=======
 bool IntersectBox(Ray ray, Box bx, out Hit x) {
->>>>>>> youssef
     vec3 t0, t1;
     //défini tout les cas de t0 et t1 pour x puis y puis z dans tous les angles de la cam
     if (ray.d.x >= 0.) { 
@@ -608,11 +402,7 @@ bool IntersectBox(Ray ray, Box bx, out Hit x) {
     tmax = min(tmax, t1.z);
     //sélection du t:
     float t = (tmin < 0.) ? tmax : tmin;
-<<<<<<< HEAD
-    if(t>0.){
-=======
     if (t>0.) {
->>>>>>> youssef
         vec3 p=Point(ray,t);
         //le centre du box
         vec3 c = (bx.a + bx.b)/2.;
@@ -625,29 +415,15 @@ bool IntersectBox(Ray ray, Box bx, out Hit x) {
 // Sphere intersection
 // ray : The ray
 //   x : Returned intersection information
-<<<<<<< HEAD
-bool IntersectTorus(Ray ray,Torus tor,out Hit x) // normale 1 et normale 2 x et ys
-{
-
-    if(tor._R > tor._r){
-    
-=======
 bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x et ys
     if (tor._R > tor._r) {
->>>>>>> youssef
         vec3 oc=ray.o-tor.c;
         float u = dot(ray.d, ray.d);
         float v = 2. * dot(oc, ray.d); 
         float w = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
 
         float l = - 4. * (tor._R * tor._R) * ((ray.d.x * ray.d.x) + (ray.d.y * ray.d.y));
-<<<<<<< HEAD
-
         float m = - 8. * (tor._R * tor._R) * ((ray.o.x * ray.d.x) + (ray.o.y * ray.d.y)); // faute ici pour le o-c
-
-=======
-        float m = - 8. * (tor._R * tor._R) * ((ray.o.x * ray.d.x) + (ray.o.y * ray.d.y)); // faute ici pour le o-c
->>>>>>> youssef
         float n = - 4. * (tor._R * tor._R) * ((ray.o.x * ray.o.x) + (ray.o.y * ray.o.y)); // faute ici pour le o-c
 
 
@@ -656,13 +432,7 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
         float h = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
 
         float i = - 4. * (tor._R * tor._R) * ((ray.d.x * ray.d.x) + (ray.d.y * ray.d.y));
-<<<<<<< HEAD
-
         float j = - 8. * (tor._R * tor._R) * ((oc.x * ray.d.x) + (oc.y * ray.d.y)); // faute ici pour le o-c
-
-=======
-        float j = - 8. * (tor._R * tor._R) * ((oc.x * ray.d.x) + (oc.y * ray.d.y)); // faute ici pour le o-c
->>>>>>> youssef
         float k = - 4. * (tor._R * tor._R) * ((oc.x * oc.x) + (oc.y * oc.y)); // faute ici pour le o-c
 
 
@@ -674,39 +444,14 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
 
         float a1 = f * f;
         float b1 = 2. * f * g;
-<<<<<<< HEAD
-
-        float c1 = (2. * f * h) + (g * g) + i;
-
-        float d1 = (2. * g * h) + j;
-        float e1 = (h * h) + k;
-
-
-=======
         float c1 = (2. * f * h) + (g * g) + i;
         float d1 = (2. * g * h) + j;
         float e1 = (h * h) + k;
 
->>>>>>> youssef
         vec4 roots;
         //int nroots = solveQuartic(a, b, c, d, e, roots);
         int nroots = solveQuartic(a1, b1, c1, d1, e1, roots);
 
-<<<<<<< HEAD
-
-        if(nroots > 0)
-        {
-
-            float t1, t2, t;
-
-            if(nroots == 2){
-
-                t =  min(roots.x, roots.y);
-
-            }
-
-            if (nroots == 4){
-=======
         if (nroots > 0) {
             float t1, t2, t;
             if (nroots == 2) {
@@ -714,29 +459,17 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
             }
 
             if (nroots == 4) {
->>>>>>> youssef
                 t1 = min(roots.x, roots.y);
                 t2 = min(roots.z, roots.w);
                 t = min (t1, t2);
             }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> youssef
             //4 z (x² + y² + z² + R² - r²) - 8 R² z
             //df/dx = 4 x (x² + y² + z² + R² - r²) - 8 R² x
             //df/dy = 4 y (x² + y² + z² + R² - r²)
             //df/dz = 4 z (x² + y² + z² + R² - r²) - 8 R² z
 
-<<<<<<< HEAD
-
-            if(t>0.)
-            {
-=======
             if (t>0.) {
->>>>>>> youssef
                 vec3 p=Point(ray, t);
                 vec3 normale;
                 //normale.x =  4. * p.x * ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) + tor._r * tor._R - tor._r * tor._r) - 8.* (tor._R)* (tor._R) * p.x;
@@ -748,18 +481,6 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
                 //normale.z = tor.c.z;
                 
                 
-<<<<<<< HEAD
-                normale.x = p.x * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
-                normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
-                normale.z = tor.c.z;
-                
-                //normale.x = p.x * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
-                //normale.y = p.y * (tor._R / sqrt(pow(p.x, 2.0) + pow(p.y, 2.0)));
-                //normale.z = 0.;
-                
-                
-                x=Hit(t,normalize(p - normale),tor.i);
-=======
                 //normale.x = p.x  * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
                 //normale.y = p.y * (tor._R / sqrt(pow(p.x - tor.c.x, 2.0) + pow(p.y - tor.c.y, 2.0)  + pow(p.z - tor.c.z, 2.0) ));
                 //normale.z = tor.c.z;
@@ -796,7 +517,6 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
                 
                 //x=Hit(t,normalize(nor),tor.i);
                 x=Hit(t,normalize(p-zab),tor.i);
->>>>>>> youssef
 
                 return true;
                 
@@ -817,37 +537,19 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
                 x = Hit(t, normale, tor.i);
 
                 return true;*/
-<<<<<<< HEAD
-                
-                
-            }
-
-        }
-        return false;
-    
-    }
-    
-=======
             }
         }
         return false;
     }
->>>>>>> youssef
 }
 
 Ray Translation(Ray ray, vec3 p) {
     return Ray(ray.o - p, ray.d);
 }
 
-<<<<<<< HEAD
-Ray RotationX(Ray ray, float x){
-    //construire les matrices de rotations
-    mat3 rotationX = mat3(
-=======
 Ray RotationX(Ray ray, float x) {
     //construire les matrices de rotations
     mat3 rotationX = mat3 (
->>>>>>> youssef
         1., 0.      , 0.       ,
         0., cos(x)  , -sin(x)    ,
         0., sin(x)  , cos(x)
@@ -894,22 +596,6 @@ Ray RotationX(Ray ray, float x) {
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
-<<<<<<< HEAD
-bool Intersect(Ray ray,out Hit x)
-{
-    // Spheres
-    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
-    const Sphere sph2=Sphere(vec3(2.,0.,2.),1.,1);
-    const Plane pl=Plane(vec3(0.,0.,0.), vec3(0.,0.,1.),0);
-    
-    const Ellipsoide ellip1 = Ellipsoide(vec3(-4., 3., 2.), vec3(1.6,1.,0.5), 1);
-    
-    const Cylinder cyll1 = Cylinder(vec3(3.,2.,2.), vec3(2., 4., 5.), 1. ,1);
-    
-    const disc ds = disc(vec3(3.,3.,1.), normalize(vec3(0.,2.,1.)), 4.,1);
-    
-    const Box bx = Box(vec3(-5., -5., 0.), vec3(-3., 0., 4.), 1);
-=======
 bool Intersect(Ray ray,out Hit x) {
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
@@ -925,7 +611,6 @@ bool Intersect(Ray ray,out Hit x) {
     const Disc ds = Disc(vec3(3.,3.,1.), normalize(vec3(0.,2.,1.)), 4.,1);
     
     const Box bx = Box(vec3(-10., -5., 0.), vec3(-5., 0., 4.), 1);
->>>>>>> youssef
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
@@ -937,45 +622,6 @@ bool Intersect(Ray ray,out Hit x) {
     x=Hit(1000.,vec3(0),-1);
     Hit current;
     bool ret=false;
-<<<<<<< HEAD
-    if(IntersectSphere(Tr1,sph1,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-    if(IntersectSphere(ray,sph2,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-    if(IntersectPlane(ray,pl,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-    if(IntersectEllipsoide(Tr1,ellip1,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-    /* if(IntersectDisc(ray,ds,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    } */
-    /*if(IntersectCylinder(ray,cyll1,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }*/
-    if(IntersectBox(ray ,bx,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-    if(IntersectTorus(ray,tor1,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-/*     if(IntersectTorus(ray,tor2,current)&&current.t<x.t){
-        x=current;
-        ret=true;
-    }
-    if(IntersectTorus(ray,tor3,current)&&current.t<x.t){
-=======
     if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
         x=current;
         ret=true;
@@ -1017,17 +663,12 @@ bool Intersect(Ray ray,out Hit x) {
         ret=true;
     }
     if (IntersectTorus(ray,tor3,current)&&current.t<x.t) {
->>>>>>> youssef
         x=current;
         ret=true;
     } */
     return ret;
 }
 
-<<<<<<< HEAD
-vec3 Background(vec3 rd)
-{
-=======
 
 // Pour faire l’occlusion ambiante, vous aurez besoin de générer des directions aléatoires sur une demi-sphère. 
 // Un algorithme simple consiste à tirer des points aléatoire sur une sphère (donc des direction unitaires).
@@ -1095,19 +736,13 @@ float AmbientOcclusion1(vec3 p, vec3 n, int N, Ray ray) {
 }
 
 vec3 Background(vec3 rd) {
->>>>>>> youssef
     return mix(vec3(.8,.8,.9),vec3(.7,.7,.8),rd.z);
 }
 
 // Camera rotation matrix
 // ro : Camera origin
 // ta : Target point
-<<<<<<< HEAD
-mat3 setCamera(in vec3 ro,in vec3 ta)
-{
-=======
 mat3 setCamera(in vec3 ro,in vec3 ta) {
->>>>>>> youssef
     vec3 cw=normalize(ta-ro);
     vec3 cp=vec3(0,0,1);
     vec3 cu=-normalize(cross(cw,cp));
@@ -1118,77 +753,6 @@ mat3 setCamera(in vec3 ro,in vec3 ta) {
 // Apply color model
 // m : Material
 // n : normal
-<<<<<<< HEAD
-vec3 Color(Material m,vec3 n, vec3 p, Ray camera)
-{
-    Light lightTab[2];
-    lightTab[0].lightPos = vec3(3,4,9);
-    lightTab[0].lightColor = vec3(1,1,1);
-    
-    lightTab[1].lightPos = vec3(0,4,5);
-    lightTab[1].lightColor = vec3(1,1,1);
-
-    vec3 lightDirection1 = normalize(lightTab[0].lightPos - p);
-    vec3 lightDirection2 = normalize(lightTab[1].lightPos - p);
-
-    Hit osef;
-    Ray r1 = Ray(p + n * 0.001, lightDirection1); // le rayon que j'envoie de point d'intersect de mon objet
-    Ray r2 = Ray(p + n * 0.001, lightDirection2); // le rayon que j'envoie de point d'intersect de mon objet
-    vec3 finalColor1;
-    vec3 finalColor2;
-
-    // Je dois calculer la lumiere spectrale et la lumiere diffus
-    // Éclairage spéculaire             
-    vec3 viewDir = normalize(camera.o - p); // Direction de la caméra  
-
-    if(Intersect(r1, osef)){
-        finalColor1 = vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
-    } else {
-        vec3 reflectDir1 = reflect(-lightDirection1, n); // Direction de réflexion de lumiere depuis mon objet   
-        float spec1 = pow(max(dot(viewDir, reflectDir1), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
-        vec3 specularColor1 = m.s * spec1 * lightTab[0].lightColor;             // Éclairage diffus             
-        float diff1 = max(dot(n, lightDirection1), 0.0); // Composante diffuse     
-        vec3 diffuseColor1 = m.d * diff1 * lightTab[0].lightColor;
-         // Couleur a retourner
-        finalColor1 = specularColor1 + diffuseColor1;
-    }
-    if(Intersect(r2, osef)){
-       finalColor2 =vec3(0.0); //je retourne la couleur de mon ombre (noir)
-    } else{
-        vec3 reflectDir2 = reflect(-lightDirection2, n); // Direction de réflexion de lumiere depuis mon objet   
-        float spec2 = pow(max(dot(viewDir, reflectDir2), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
-        vec3 specularColor2 = m.s * spec2 * lightTab[1].lightColor;             // Éclairage diffus             
-        float diff2 = max(dot(n, lightDirection2), 0.0); // Composante diffuse     
-        vec3 diffuseColor2 = m.d * diff2 * lightTab[1].lightColor;
-        // Couleur a retourner
-        finalColor2 = specularColor2 + diffuseColor2;
-    }
-        
-    return finalColor1 + finalColor2;
-
-    // Hit x;
-    // vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
-
-    // if (!Intersect(Ray(p+n*0.01, light), x)) {
-    //     float diff = clamp(dot(n,light),0.,1.); // diff pour diffus
-    //     vec3 col= m.d * diff + vec3(.2,.2,.2);
-    //     return col;
-    // }
-    // else {
-    //     return m.a;
-    // }
-}
-
-// Rendering
-vec3 Shade(Ray ray)
-{
-    // Intersect contains all the geo detection
-    Hit x;
-    bool idx=Intersect(ray,x);
-    
-    if(idx)
-    {
-=======
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Scene scene;
     scene.nbLight = 2 ;
@@ -1238,30 +802,19 @@ vec3 Shade(Ray ray) {
     bool idx = Intersect(ray,x);
     
     if (idx) {
->>>>>>> youssef
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
         
         return Color(mat,x.n, p, ray);
     }
-<<<<<<< HEAD
-    else
-    {
-=======
     else {
->>>>>>> youssef
         return Background(ray.d);
     }
     
     return vec3(0);
 }
 
-<<<<<<< HEAD
-void mainImage(out vec4 fragColor,in vec2 fragCoord)
-{
-=======
 void mainImage(out vec4 fragColor,in vec2 fragCoord) {
->>>>>>> youssef
     // From uv which are the pixel coordinates in [0,1], change to [-1,1] and apply aspect ratio
     vec2 uv=(-iResolution.xy+2.*fragCoord.xy)/iResolution.y;
     
