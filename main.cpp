@@ -790,7 +790,7 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     float ao = AmbientOcclusion(p, n, 1, camera); 
 
     // Combine direct and indirect lighting (ambient occlusion)
-    vec3 indirectLight = ao * vec3(0.0); // Adjust vec3 value to change the color
+    vec3 indirectLight = ao * vec3(-0.5); // Adjust vec3 value to change the color
     finalColor += indirectLight;
     return finalColor;
 }
