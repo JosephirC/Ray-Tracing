@@ -773,26 +773,42 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
          vec3 lightDirection = normalize(lightTab[i].lightPos - p);
          Ray r = Ray(p + n * 0.001, lightDirection); // le rayon que j'envoie de point d'intersect de mon objet
 
-        if (Intersect(r, randomHit)) {
-            finalColor += vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
-        } else {
-            vec3 reflectDir = reflect(-lightDirection, n); // Direction de réflexion de lumiere depuis mon objet   
-            float spec = pow(max(dot(camDir, reflectDir), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
-            vec3 specularColor = m.s * spec * lightTab[i].lightColor;             // Éclairage diffus             
-            float diff = max(dot(n, lightDirection), 0.0); // Composante diffuse     
-            vec3 diffuseColor = m.d * diff * lightTab[i].lightColor;
-            // Couleur a retourner
-            finalColor += specularColor + diffuseColor;
-        }
+    if(Intersect(r1, osef)){
+        finalColor1 = vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
+    } else {
+        vec3 reflectDir1 = reflect(-lightDirection1, n); // Direction de réflexion de lumiere depuis mon objet   
+        float spec1 = pow(max(dot(viewDir, reflectDir1), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+        vec3 specularColor1 = m.s * spec1 * lightTab[0].lightColor;             // Éclairage diffus             
+        float diff1 = max(dot(n, lightDirection1), 0.0); // Composante diffuse     
+        vec3 diffuseColor1 = m.d * diff1 * lightTab[0].lightColor;
+         // Couleur a retourner
+        finalColor1 = specularColor1 + diffuseColor1;
     }
+    if(Intersect(r2, osef)){
+       finalColor2 =vec3(0.0); //je retourne la couleur de mon ombre (noir)
+    } else{
+        vec3 reflectDir2 = reflect(-lightDirection2, n); // Direction de réflexion de lumiere depuis mon objet   
+        float spec2 = pow(max(dot(viewDir, reflectDir2), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+        vec3 specularColor2 = m.s * spec2 * lightTab[1].lightColor;             // Éclairage diffus             
+        float diff2 = max(dot(n, lightDirection2), 0.0); // Composante diffuse     
+        vec3 diffuseColor2 = m.d * diff2 * lightTab[1].lightColor;
+        // Couleur a retourner
+        finalColor2 = specularColor2 + diffuseColor2;
+    }
+        
+    return finalColor1 + finalColor2;
 
-    // Ambient occlusion
-    float ao = AmbientOcclusion(p, n, 1, camera); 
+    // Hit x;
+    // vec3 light=normalize(vec3(-1,2,1));//vecteur directeur de la lumière
 
-    // Combine direct and indirect lighting (ambient occlusion)
-    vec3 indirectLight = ao * vec3(0.0); // Adjust vec3 value to change the color
-    finalColor += indirectLight;
-    return finalColor;
+    // if (!Intersect(Ray(p+n*0.01, light), x)) {
+    //     float diff = clamp(dot(n,light),0.,1.); // diff pour diffus
+    //     vec3 col= m.d * diff + vec3(.2,.2,.2);
+    //     return col;
+    // }
+    // else {
+    //     return m.a;
+    // }
 }
 
 // Rendering
