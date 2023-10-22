@@ -547,50 +547,32 @@ Ray Translation(Ray ray, vec3 p) {
     return Ray(ray.o - p, ray.d);
 }
 
-Ray RotationX(Ray ray, float x) {
-    //construire les matrices de rotations
-    mat3 rotationX = mat3 (
-        1., 0.      , 0.       ,
-        0., cos(x)  , -sin(x)    ,
-        0., sin(x)  , cos(x)
-    );
-    //ramener à 0
-    Ray rayTmp = ray;
-    //ray.o = vec3(0, 0, 0);
-    //effectuer la rotation
-    ray.o = rotationX * ray.o;
-    ray.d = rotationX * ray.d;
-    //ramener à où c'était
-    //ray = Translation(ray, rayTmp.o);
-    return ray;
-}
-/* Ray Rotation(Ray ray, vec3 r) {
+Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
     //construire les matrices de rotations
     mat3 rotationX = mat3(
         1., 0.      , 0.       ,
-        0., cos(r.x), -sin(r.x),
-        0., sin(r.x), cos(r.x)
+        0., cos(rot.x), -sin(rot.x),
+        0., sin(rot.x), cos(rot.x)
     );
     mat3 rotationY = mat3(
-        cos(r.y), 0., -sin(r.y),
+        cos(rot.y), 0., -sin(rot.y),
         0.      , 1., 0.       ,
-        sin(r.y), 0., cos(r.y)
+        sin(rot.y), 0., cos(rot.y)
     );
     mat3 rotationZ = mat3(
-        cos(r.z), -sin(r.z), 0.,
-        sin(r.z), cos(r.z) , 0.,
+        cos(rot.z), -sin(rot.z), 0.,
+        sin(rot.z), cos(rot.z) , 0.,
         0.      , 0.       , 1.
     );
     //ramener à 0
-    Ray rayTmp = ray;
-    ray.o = ray.o - ray.o;
+    Ray rayMoved = Translation(ray, tr);
     //effectuer la rotation
-    ray.o = rotationZ * rotationY * rotationX * ray.o;
-    ray.d = rotationZ * rotationY * rotationX * ray.d;
+    rayMoved.o = rotationZ * rotationY * rotationX * rayMoved.o;
+    rayMoved.d = rotationZ * rotationY * rotationX * rayMoved.d;
     //ramener à où c'était
-    ray = Translation(ray, rayTmp.o);
+    ray = Translation(rayMoved, -tr);
     return ray;
-} */
+}
 
 // Scene intersection
 // ray : The ray
