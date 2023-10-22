@@ -587,11 +587,11 @@ bool Intersect(Ray ray,inout Hit x)
     Ray Tr1 = Translation(ray, vec3(0.,0.,2.));
     Ray Tr2 = Translation(ray, vec3(5.,2.,2.));
     Ray rot1 = Rotation(ray, vec3(0., 0., iTime) , tor1.c);
-    Ray rot2 = RotationX(ray, 10.*iTime, sph1.c);
+    //Ray rot2 = RotationX(ray, 10.*iTime, sph1.c);
 
     Hit current;
     bool ret=false;
-    if(IntersectSphere(rot2,sph1,current)&&current.t<x.t){
+    if(IntersectSphere(rot1,sph1,current)&&current.t<x.t){
         x=current;
         ret=true;
     }
