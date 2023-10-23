@@ -203,12 +203,9 @@ Material MarbleTexture(vec3 point, Material color1, Material color2) {
 }
 
 Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
-    point = point + Turbulence(point, 3., 3., 10);
-    float t = tan(point.x*2.) * 5.;
-
-    vec3 veins = vec3(point.x+t,point.yz);
-
-    if(veins.x < 0.) {
+    point = point + Turbulence(point, 5., 5.,10);
+    float t = tan(point.x*3.);
+    if(t < 4.) {
         return color1;//couleur veine
     } 
     else {
@@ -243,8 +240,8 @@ Material Texture(vec3 p,int i) {
         return marble;
     }
     else if (i == 5) { // Marble
-        Material color1 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
-        Material color2 = Material(vec3(0.3, 0.3, 0.1), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material color1 = Material(vec3(0.3, 0.3, 0.3), vec3(0.2,0.2,0.2), vec3(0, 0, 0), 1.);
+        Material color2 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(3, 3, 3), 100.);
         Material marble = VeinMarbleTexture(p, color1, color2);
         return marble;
     }
