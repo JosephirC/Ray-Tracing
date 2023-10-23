@@ -107,11 +107,11 @@ struct Material {
 
 float Checkers(in vec2 p) {
     // Filter kernel
-    vec2 w=fwidth(p)+.001;
+    vec2 w = fwidth(p)+.001;
     // Box box filter
-    vec2 i=2.*(abs(fract((p-.5*w)*.5)-.5)-abs(fract((p+.5*w)*.5)-.5))/w;
+    vec2 i = 2. * (abs(fract((p-.5*w)*.5)-.5)-abs(fract((p+.5*w)*.5)-.5))/w;
     // xor pattern
-    return.5-.5*i.x*i.y;
+    return 0.5 - 0.5 * i.x * i.y;
 }
 
 // Compute point on ray
@@ -151,15 +151,74 @@ float Noise(in vec3 p)
                         Hash(i+vec3(1,1,1)),f.x),f.y),f.z);
 }
 
-float Turbulence(in vec3 p,float longueurOnde ,float coef, int detail){// somme de bruits 
-    float somme = coef*Noise(p/longueurOnde);
-    for(int i = 0; i<detail; i++){//boucle pour calculer la somme de bruit
+// waveLength : jsp ALED
+// coef : coefficient multiplicateur de Noise qui diminue a chaque iteration
+// detail : nombre d'occurence sur la boucle, plus d'occurence = plus de bruit
+float Turbulence(in vec3 p, float waveLength, float coef, int iterations) {// somme de bruits 
+    float turbulence = coef * Noise(p/waveLength);
+    for (int i = 0; i < iterations; i++) { //boucle pour calculer la somme de bruit
         coef = coef *0.5;
-        longueurOnde = longueurOnde *0.5;
-        somme = somme + coef*Noise(p/longueurOnde);
+        waveLength = waveLength *0.5;
+        turbulence = turbulence + coef*Noise(p/waveLength);
     }
-    return somme;
+    return turbulence;
 }
+
+// vec3 WoodTexture(in vec3 p, vec3 a, vec3 b, float E, float noise){
+//     p = p + noise * Noise(p) * (p/E);//perturbation de p en fonction de l'indice bruit et de la longeur d'onde E
+//     float d = length(p.xy);//calcul de la distance pour créer les cercles
+//     float v = 0.5 * cos(d*E) + 1.0;//utilisation de cos pour interpoler les deux couleurs quand v=1 couleur a quand v= 0 couleur b
+//     return vec3((a.c * v + b.c * (1.0-v)), (a.s * v + b.s * (1.0-v)) );//vrai interpolation de la couleur mais aussi de l'indice spéculaire
+// }
+
+int convert(float a){
+    if (a < 0.0) {
+        a= a-1.0;
+    }
+    return int(a);
+}
+
+vec3 Damier(vec3 point, vec3 color1, vec3 color2 ){
+    vec3 w = fwidth(point)+.001;
+    int x = convert(point.x);    //convertion en entier
+    int y = convert(point.y);    //correction partie entière des valeurs négatifs pour evité le cas de int(0.4)=int(-0.4)
+    int z = convert(point.z);
+
+        if ((x + y + z) %2 == 0) {//modulo 2 pour faire 2 cas: coordonées paire, coordonées impaire
+        return color1 / w;
+    } else {
+        return color2 / w;
+    }   
+}
+
+// vec3 veine = vec3(p.x+t,p.yz);
+//     if(veine.x<0.) return a;//couleur veine
+//     else return b;//couleur fond
+
+Material MarbleTexture(vec3 point, Material color1, Material color2) {
+    point = point + Turbulence(point, 1., 20., 10);
+    float t = cos(point.x);
+    Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50.);
+    return finalColor;
+}
+
+Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
+    point = point + Turbulence(point, 3., 3., 10);
+    float t = tan(point.x*2.) * 5.;
+
+    vec3 veins = vec3(point.x+t,point.yz);
+
+    if(veins.x < 0.) {
+        return color1;//couleur veine
+    } 
+    else {
+        return color2;//couleur fond
+    }
+
+    //Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50.);
+    //return finalColor;
+}
+
 //////////////////////////////////////////////////////////////////////
 
 // Compute color
@@ -170,15 +229,30 @@ Material Texture(vec3 p,int i) {
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
         return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
     }
-    else if (i==2) {
+    else if (i == 2) {
         return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
-    else if (i==0) {
+    else if (i == 3) { // Damier
+        vec3 texture = Damier(p, vec3(1., 1., 1.), vec3(0., 0., 0.));
+        return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
+    }
+    else if (i == 4) { // Marble
+        Material color1 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
+        Material color2 = Material(vec3(0.3, 0.3, 0.1), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material marble = MarbleTexture(p, color1, color2);
+        return marble;
+    }
+    else if (i == 5) { // Marble
+        Material color1 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
+        Material color2 = Material(vec3(0.3, 0.3, 0.1), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material marble = VeinMarbleTexture(p, color1, color2);
+        return marble;
+    }
+    else if (i == 0) {
         //compute checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
         return Material(col,vec3(0.2,0.2,0.2), vec3(0.9, 0.9, 0.9), 50.);
-
     }
     return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50.);
 }
@@ -589,7 +663,7 @@ bool IntersectGoursat(Ray ray, Goursat goursat, out Hit x) {
 
     float k = -5. * dot(ray.d,ray.d);
     float l = -10. * dot(oc, ray.d);
-    float m = -5. * dot(oc, oc) + 11.8;
+    float m = -5. * dot(oc, oc) + 3.5 * cos(iTime) + 14.5;
 
     float a = f;
     float b = g;
@@ -691,26 +765,26 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
 bool Intersect(Ray ray,out Hit x) {
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
-    const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,1);
-    const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
+    const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,3);
+    const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(0., 0., 0.), vec3(1.,1.,0.5), 1);
     
-    const Cylinder cyll1 = Cylinder(vec3(2.,3.,2.), vec3(4., 4., 3.), 0.25,1);
+    const Cylinder cyll1 = Cylinder(vec3(3.,3.,0.), vec3(3., 3., 2.), .75,3);
 
     const Capsule cap = Capsule(vec3(0.,2.,2.), vec3(-2., 2., 3.), 0.5 ,1);
     
     const Disc ds = Disc(vec3(0.,0.,1.), normalize(vec3(0.,2.,1.)), 1.,1);
 
-    const Box bx = Box(vec3(-6., -3., 0.), vec3(-4., 0., 2.), 1);
+    const Box bx = Box(vec3(-6., -3., 0.), vec3(-4., 0., 2.), 5);
 
-    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
+    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 3);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
 
     const Goursat surp = Goursat(vec3(0., 0., 3.), 1);
 
-    Ray Tr1 = Translation(ray, vec3(0.,2.,3.));
+    Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
     // Ray rot1 = Rotation(Tr1, vec3(iTime, 0., 0.), tor1.c);
     vec3 angle = vec3(iTime, 0., 0.);
     //Rotation avec iTime et iTime ne fonctionne pas
@@ -720,10 +794,10 @@ bool Intersect(Ray ray,out Hit x) {
 
     Hit current;
     bool ret=false;
-    // if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
-    //     x=current;
-    //     ret=true;
-    // }
+    if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
+        x=current;
+        ret=true;
+    }
     // if (IntersectSphere(ray,sph2,current) && current.t<x.t) {
     //     x=current;
     //     ret=true;
@@ -748,11 +822,11 @@ bool Intersect(Ray ray,out Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    // if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
-    //     x=current;
-    //     ret=true;
-    // }
-    // if (IntersectTorus(Rotation(ray, angle , tor1.c),tor1,current)&&current.t<x.t) {
+    if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
+        x=current;
+        ret=true;
+    }
+    // if (IntersectTorus(Rotation(Tr1, angle , tor1.c),tor1,current)&&current.t<x.t) {
     //     x=current;
     //     x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
     //     ret=true;
@@ -765,10 +839,10 @@ bool Intersect(Ray ray,out Hit x) {
         x=current;
         ret=true;
     } */
-    if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    }
+    // if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     return ret;
 }
 
