@@ -203,12 +203,9 @@ Material MarbleTexture(vec3 point, Material color1, Material color2) {
 }
 
 Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
-    point = point + Turbulence(point, 3., 3., 10);
-    float t = tan(point.x*2.) * 5.;
-
-    vec3 veins = vec3(point.x+t,point.yz);
-
-    if(veins.x < 0.) {
+    point = point + Turbulence(point, 5., 5.,10);
+    float t = tan(point.x*3.);
+    if(t < 4.) {
         return color1;//couleur veine
     } 
     else {
@@ -218,6 +215,7 @@ Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
     //Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50.);
     //return finalColor;
 }
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -237,14 +235,14 @@ Material Texture(vec3 p,int i) {
         return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if (i == 4) { // Marble
-        Material color1 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
-        Material color2 = Material(vec3(0.3, 0.3, 0.1), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material color1 = Material(vec3(1.2, 1.2, 1.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
+        Material color2 = Material(vec3(0.83, .83, .83), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
         Material marble = MarbleTexture(p, color1, color2);
         return marble;
     }
     else if (i == 5) { // Marble
-        Material color1 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
-        Material color2 = Material(vec3(0.3, 0.3, 0.1), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material color1 = Material(vec3(0.3, 0.3, 0.3), vec3(0.2,0.2,0.2), vec3(0, 0, 0), 1.);
+        Material color2 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(3, 3, 3), 100.);
         Material marble = VeinMarbleTexture(p, color1, color2);
         return marble;
     }
@@ -776,7 +774,7 @@ bool Intersect(Ray ray,out Hit x) {
     
     const Disc ds = Disc(vec3(0.,0.,1.), normalize(vec3(0.,2.,1.)), 1.,1);
 
-    const Box bx = Box(vec3(-6., -3., 0.), vec3(-4., 0., 2.), 5);
+    const Box bx = Box(vec3(-6., -3., 0.), vec3(-4., 0., 2.), 4);
 
     const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 3);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
@@ -934,7 +932,7 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Ray rotLight = Rotation(Ray(scene.tabLight[0].lightPos, vec3(0)), vec3(0, 0, iTime), vec3(1, 0, 0));
 
     // Pour faire une rotation sur la lumiere
-    // scene.tabLight[0].lightPos = rotLight.o; 
+    scene.tabLight[0].lightPos = rotLight.o; 
 
     // scene.tabLight[1].lightPos = vec3(-2,-2,2.4);
     // scene.tabLight[1].lightColor = vec3(1,1,1);
@@ -1009,7 +1007,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     
     // Ray origin
     //défini la position de la cam
-    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
+    vec3 ro=20.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
     vec3 ta=vec3(0.,0.,1.5);
     mat3 ca=setCamera(ro,ta);
     
