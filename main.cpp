@@ -688,7 +688,7 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
-bool Intersect(Ray ray,out Hit x) {
+bool Intersect(Ray ray,inout Hit x) {
     // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
     const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,1);
