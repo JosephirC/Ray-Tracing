@@ -95,7 +95,7 @@ struct Scene {
     Torus tabTorus[10]; // Array of Torus
 
     int nbLight; // Number of displayed Light sources in the Scene
-    Light tabLight[10]; // Array of Light sources
+    Light tabLight[30]; // Array of Light sources
 };
 
 struct Material {
@@ -216,6 +216,7 @@ Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
     //return finalColor;
 }
 
+
 //////////////////////////////////////////////////////////////////////
 
 // Compute color
@@ -226,20 +227,22 @@ Material Texture(vec3 p,int i) {
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
         return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
     }
-    else if (i == 2) {
-        return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
+    else if (i == 2) { // variation
+        vec3 colorA = vec3(0.1,0.1,0.9);
+        vec3 colorB = vec3(1.,0.8,0.2);
+        return Material(mix(colorA, colorB, sin(iTime*0.5)),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if (i == 3) { // Damier
         vec3 texture = Damier(p, vec3(1., 1., 1.), vec3(0., 0., 0.));
         return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if (i == 4) { // Marble
-        Material color1 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
-        Material color2 = Material(vec3(0.3, 0.3, 0.1), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material color1 = Material(vec3(1.2, 1.2, 1.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
+        Material color2 = Material(vec3(0.83, .83, .83), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
         Material marble = MarbleTexture(p, color1, color2);
         return marble;
     }
-    else if (i == 5) { // Marble
+    else if (i == 5) { // Marble veineux
         Material color1 = Material(vec3(0.3, 0.3, 0.3), vec3(0.2,0.2,0.2), vec3(0, 0, 0), 1.);
         Material color2 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(3, 3, 3), 100.);
         Material marble = VeinMarbleTexture(p, color1, color2);
@@ -728,6 +731,26 @@ vec3 Translation(vec3 ray, vec3 p) {
     return ray - p;
 }
 
+Ray Homothetie(Ray ray, vec3 homo, vec3 tr) {
+    mat3 homothetie = mat3(
+        homo.x, 0     , 0 ,
+        0     , homo.y, 0 ,
+        0     , 0 , homo.z
+    );
+    ray.o = ray.o / homo;
+    ray.d;
+    /* ray.d = homothetie * ray.d;
+
+    //ramener à 0
+    ray.o = Translation(ray.o, tr);
+
+    //effectuer l'homothétie
+    ray.o = homothetie * ray.o;
+    //ramener à où c'était
+    ray.o = Translation(ray.o, -tr); */
+    return ray;
+}
+
 Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
     //construire les matrices de rotations
     mat3 rotationX = mat3(
@@ -745,8 +768,8 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
         sin(rot.z), cos(rot.z) , 0.,
         0.      , 0.       , 1.
     );
-    //ramener à 0
     ray.d = rotationZ * rotationY * rotationX * ray.d;
+    //ramener à 0
     ray.o = Translation(ray.o, tr);
     //effectuer la rotation
     ray.o = rotationZ * rotationY * rotationX * ray.o;
@@ -759,31 +782,31 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
-bool Intersect(Ray ray,out Hit x) {
+bool Intersect(Ray ray,inout Hit x) {
     // Spheres
-    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
-    const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,3);
+    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,3);
+    const Sphere sph2=Sphere(vec3(0.,0.,0.),1.,2);
     const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
     
-    const Ellipsoide ellip1 = Ellipsoide(vec3(0., 0., 0.), vec3(1.,1.,0.5), 1);
+    const Ellipsoide ellip1 = Ellipsoide(vec3(6., 3., 2.), vec3(1.,1.,0.5), 1);
     
-    const Cylinder cyll1 = Cylinder(vec3(3.,3.,0.), vec3(3., 3., 2.), .75,3);
+    const Cylinder cyll1 = Cylinder(vec3(0.,0.,0.), vec3(0., 0., 2.2), .75,3);
 
     const Capsule cap = Capsule(vec3(0.,2.,2.), vec3(-2., 2., 3.), 0.5 ,1);
     
-    const Disc ds = Disc(vec3(0.,0.,1.), normalize(vec3(0.,2.,1.)), 1.,1);
+    const Disc ds = Disc(vec3(0.,0.,0.), normalize(vec3(0.,2.,1.)), 1.,1);
 
-    const Box bx = Box(vec3(-6., -3., 0.), vec3(-4., 0., 2.), 5);
+    const Box bx = Box(vec3(-6.1, -3.1, 1.1), vec3(-4.1, 0.1, 2.1), 3);
 
-    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 3);
+    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 5);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
 
-    const Goursat surp = Goursat(vec3(0., 0., 3.), 1);
-
-    Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
+    const Goursat surp = Goursat(vec3(0., -4., 3.), 4);
+    Ray homosexuel = Homothetie(ray, vec3(1.5, 1.5, 1.5), sph2.c);
+    Ray Tr1 = Translation(ray, vec3(0.,4.,3.));
     // Ray rot1 = Rotation(Tr1, vec3(iTime, 0., 0.), tor1.c);
-    vec3 angle = vec3(iTime, 0., 0.);
+    vec3 angle = vec3(0., iTime, 0.);
     //Rotation avec iTime et iTime ne fonctionne pas
 
     // on decomente ici et on comment dans la Fonction Shade et on peut voir l'OA
@@ -795,26 +818,26 @@ bool Intersect(Ray ray,out Hit x) {
         x=current;
         ret=true;
     }
-    // if (IntersectSphere(ray,sph2,current) && current.t<x.t) {
-    //     x=current;
-    //     ret=true;
-    // }
+    if (IntersectSphere(homosexuel,sph2,current) && current.t<x.t) {
+        x=current;
+        ret=true;
+    }
     if (IntersectPlane(ray,pl,current) && current.t<x.t) {
         x=current;
         ret=true;
     }
-    // if (IntersectEllipsoide(Tr1,ellip1,current) && current.t<x.t) {
-    //     x=current;
-    //     ret=true;
+    // if (IntersectEllipsoide(ray,ellip1,current) && current.t<x.t) {
+        // x=current;
+        // ret=true;
     // }
     // if (NewIntersectDisc(ray,disc,current)&&current.t<x.t) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectCylinder(ray,cyll1,current) && current.t<x.t) {
-        x=current;
-        ret=true;
-    }
+    // if (IntersectCylinder(ray,cyll1,current) && current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     // if (IntersectCapsule(ray,cap,current)&&current.t<x.t) {
     //     x=current;
     //     ret=true;
@@ -823,7 +846,7 @@ bool Intersect(Ray ray,out Hit x) {
         x=current;
         ret=true;
     }
-    // if (IntersectTorus(Rotation(Tr1, angle , tor1.c),tor1,current)&&current.t<x.t) {
+    // if (IntersectTorus(Rotation(Tr1, angle , tor1.c), tor1,current)&&current.t<x.t) {
     //     x=current;
     //     x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
     //     ret=true;
@@ -836,10 +859,10 @@ bool Intersect(Ray ray,out Hit x) {
         x=current;
         ret=true;
     } */
-    // if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
-    //     x=current;
-    //     ret=true;
-    // }
+    if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
+        x=current;
+        ret=true;
+    }
     return ret;
 }
 
@@ -908,12 +931,12 @@ mat3 setCamera(in vec3 ro,in vec3 ta) {
 // n : normal
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Scene scene;
-    scene.nbLight = 1 ;
-    // scene.tabLight[0].lightPos = vec3(3,4,9);
-    // scene.tabLight[0].lightColor = vec3(1,1,1);
+    scene.nbLight = 2 ;
+     scene.tabLight[0].lightPos = vec3(3,4,9);
+     scene.tabLight[0].lightColor = vec3(1,1,1);
 
-    // scene.tabLight[1].lightPos = vec3(0,4,5);
-    // scene.tabLight[1].lightColor = vec3(1,1,1);
+     scene.tabLight[1].lightPos = vec3(0,4,5);
+     scene.tabLight[1].lightColor = vec3(1,1,1);
 
 
     // Box wiht ambient occlusion light testing
@@ -923,15 +946,15 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     // scene.tabLight[0].lightColor = vec3(1,1,1);
 
     // testing
-    scene.tabLight[0].lightPos = vec3(5,5,10.);
+    //scene.tabLight[0].lightPos = vec3(5,5,10.);
 
-    // scene.tabLight[0].lightPos = vec3(-1,-9,2.4);
-    scene.tabLight[0].lightColor = vec3(1,1,1);
+    //scene.tabLight[0].lightPos = vec3(-1,-9,2.4);
+    //scene.tabLight[0].lightColor = vec3(1,1,1);
 
-    Ray rotLight = Rotation(Ray(scene.tabLight[0].lightPos, vec3(0)), vec3(0, 0, iTime), vec3(1, 0, 0));
+    Ray rotLight = Rotation(Ray(scene.tabLight[0].lightPos, vec3(0)), vec3(0, 0, 0), vec3(1, 0, 0));
 
     // Pour faire une rotation sur la lumiere
-    // scene.tabLight[0].lightPos = rotLight.o; 
+    scene.tabLight[0].lightPos = rotLight.o; 
 
     // scene.tabLight[1].lightPos = vec3(-2,-2,2.4);
     // scene.tabLight[1].lightColor = vec3(1,1,1);
@@ -1006,7 +1029,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     
     // Ray origin
     //défini la position de la cam
-    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
+    vec3 ro=20.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
     vec3 ta=vec3(0.,0.,1.5);
     mat3 ca=setCamera(ro,ta);
     
