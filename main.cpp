@@ -215,8 +215,6 @@ Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
     //Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50.);
     //return finalColor;
 }
-
-
 //////////////////////////////////////////////////////////////////////
 
 // Compute color
@@ -282,7 +280,7 @@ bool IntersectSphere(Ray ray,Sphere sph,out Hit x) {
         float t=-b-sqrt(d);
         if (t>0.){
             vec3 p=Point(ray,t);
-            x=Hit(t,normalize(p-sph.c),sph.i); 
+            x=Hit(t,normalize(p-sph.c),sph.i);
             return true;
         }
     }
@@ -732,17 +730,14 @@ vec3 Translation(vec3 ray, vec3 p) {
 }
 
 Ray Homothetie(Ray ray, vec3 homo, vec3 tr) {
-    mat3 homothetie = mat3(
-        homo.x, 0     , 0 ,
-        0     , homo.y, 0 ,
-        0     , 0 , homo.z
-    );
-    ray.o = ray.o / homo;
-    ray.d;
-    /* ray.d = homothetie * ray.d;
-
     //ramener à 0
+    ray.d = ray.d / homo;
     ray.o = Translation(ray.o, tr);
+    ray.o = ray.o / homo;
+    ray.o = Translation(ray.o, -tr);
+    ray.d = normalize(ray.d);
+    /* //ray.d;
+     ray.d = homothetie * ray.d;
 
     //effectuer l'homothétie
     ray.o = homothetie * ray.o;
@@ -778,14 +773,16 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
     return ray;
 }
 
+//Rotation sur 2 axe casser normale : changer sens de mult
+
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
 bool Intersect(Ray ray,inout Hit x) {
     // Spheres
-    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,3);
-    const Sphere sph2=Sphere(vec3(0.,0.,0.),1.,2);
+    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
+    const Sphere sph2=Sphere(vec3(0.,0.,2.),1.,2);
     const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
     
     const Ellipsoide ellip1 = Ellipsoide(vec3(6., 3., 2.), vec3(1.,1.,0.5), 1);
@@ -803,7 +800,8 @@ bool Intersect(Ray ray,inout Hit x) {
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
 
     const Goursat surp = Goursat(vec3(0., -4., 3.), 4);
-    Ray homosexuel = Homothetie(ray, vec3(1.5, 1.5, 1.5), sph2.c);
+    vec3 scale = vec3(2., 2., 5.);
+    Ray homo = Homothetie(ray, scale, sph2.c);
     Ray Tr1 = Translation(ray, vec3(0.,4.,3.));
     // Ray rot1 = Rotation(Tr1, vec3(iTime, 0., 0.), tor1.c);
     vec3 angle = vec3(0., iTime, 0.);
@@ -814,11 +812,11 @@ bool Intersect(Ray ray,inout Hit x) {
 
     Hit current;
     bool ret=false;
-    if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    }
-    if (IntersectSphere(homosexuel,sph2,current) && current.t<x.t) {
+    // if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
+    if (IntersectSphere(homo,sph2,current) && current.t < x.t ) {
         x=current;
         ret=true;
     }
@@ -842,27 +840,27 @@ bool Intersect(Ray ray,inout Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    }
-    // if (IntersectTorus(Rotation(Tr1, angle , tor1.c), tor1,current)&&current.t<x.t) {
+//     if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
+//         x=current;
+//         ret=true;
+//     }
+//     if (IntersectTorus(Rotation(Tr1, angle , tor1.c), tor1,current)&&current.t<x.t) {
+//         x=current;
+//         x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
+//         ret=true;
+//     }
+// /*     if (IntersectTorus(ray,tor2,current)&&current.t<x.t) {
     //     x=current;
-    //     x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
     //     ret=true;
     // }
-/*     if (IntersectTorus(ray,tor2,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    }
-    if (IntersectTorus(ray,tor3,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    } */
-    if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    }
+    // if (IntersectTorus(ray,tor3,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // } */
+    // if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     return ret;
 }
 
@@ -931,8 +929,8 @@ mat3 setCamera(in vec3 ro,in vec3 ta) {
 // n : normal
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Scene scene;
-    scene.nbLight = 2 ;
-     scene.tabLight[0].lightPos = vec3(3,4,9);
+    scene.nbLight = 1 ;
+     scene.tabLight[0].lightPos = vec3(3,40,40);
      scene.tabLight[0].lightColor = vec3(1,1,1);
 
      scene.tabLight[1].lightPos = vec3(0,4,5);
