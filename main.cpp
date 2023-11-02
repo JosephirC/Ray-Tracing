@@ -730,19 +730,17 @@ vec3 Translation(vec3 ray, vec3 p) {
 }
 
 Ray Homothetie(Ray ray, vec3 homo, vec3 tr) {
-    //ramener à 0
+    // change direction
     ray.d = ray.d / homo;
-    ray.o = Translation(ray.o, tr);
-    ray.o = ray.o / homo;
-    ray.o = Translation(ray.o, -tr);
-    ray.d = normalize(ray.d);
-    /* //ray.d;
-     ray.d = homothetie * ray.d;
 
-    //effectuer l'homothétie
-    ray.o = homothetie * ray.o;
-    //ramener à où c'était
-    ray.o = Translation(ray.o, -tr); */
+    // move to 0 origin
+    ray.o = Translation(ray.o, tr);
+    // change origin
+    ray.o = ray.o / homo;
+    // get back the origin
+    ray.o = Translation(ray.o, -tr);
+    // normalize the direction
+    ray.d = normalize(ray.d);
     return ray;
 }
 
@@ -816,7 +814,7 @@ bool Intersect(Ray ray,inout Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectSphere(homo,sph2,current) && current.t < x.t ) {
+    if (IntersectSphere(homo,sph2,current) && current.t < x.t * length(scale) ) {
         x=current;
         ret=true;
     }
