@@ -885,6 +885,19 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
     return ray;
 }
 
+Hit Homothetie(Hit homo_hit, Ray base_ray, Ray homo_ray, vec3 scale) {
+    // point d'intersection dans le repère non transformé
+    vec3 homo_p = Point(homo_ray, homo_hit.t);
+    // point d'intersection sur le vrai objet transformé
+    homo_p *= scale;
+    
+    Hit hit = homo_hit;
+    // nouveau t à partir du vrai point transformé (on résout juste homo_p = base_ray.o + t * base_ray.d, en choisissant n'importe quelle composante, ici x)
+    hit.t = (homo_p.x - base_ray.o.x) / base_ray.d.x;
+    
+    return hit;
+}
+
 //Rotation sur 2 axe casser normale : changer sens de mult
 
 // Scene intersection
