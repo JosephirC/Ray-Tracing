@@ -868,8 +868,8 @@ Scene scene1(){
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
-bool Intersect(Ray ray,out Hit x) {
-    // Spheres
+bool Intersect(Ray ray,inout Hit x) {
+    /* // Spheres
     const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,6);
     const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,1);
     const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
@@ -892,13 +892,13 @@ bool Intersect(Ray ray,out Hit x) {
 
     const Octaedre oct = Octaedre(vec3(0., 0., 0.),6); 
 
-    Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
     // Ray rot1 = Rotation(Tr1, vec3(iTime, 0., 0.), tor1.c);
-    vec3 angle = vec3(iTime, 0., 0.);
     //Rotation avec iTime et iTime ne fonctionne pas
 
     // on decomente ici et on comment dans la Fonction Shade et on peut voir l'OA
-    // x = Hit(1000., vec3(0.), -1);
+    // x = Hit(1000., vec3(0.), -1); */
+    Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
+    vec3 angle = vec3(iTime, 0., 0.);
 
     Scene scene = scene1();
 
@@ -917,34 +917,45 @@ bool Intersect(Ray ray,out Hit x) {
             x=current;
             ret=true;
         }
-        if (IntersectEllipsoide(Tr1,ellip1,current) && current.t<x.t) {
-            x=current;
-            ret=true;
-        }
-        // if (IntersectCylinder(ray,cyll1,current) && current.t<x.t) {
-        //     x=current;
-        //     ret=true;
-        // }
-        if (IntersectCapsule(ray,cap,current)&&current.t<x.t) {
-            x=current;
-            ret=true;
-        }
-        if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
-            x=current;
-            ret=true;
-        }
-        if (IntersectTorus(Rotation(Tr1, angle , tor1.c),tor1,current)&&current.t<x.t) {
-            x=current;
-            x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
-            ret=true;
-        }
-
-        // if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
-        //     x=current;
-        //     ret=true;
-        // }
-
     }
+    for (int i = 0; i < scene.nbEllipsoide; i++) {
+        if (IntersectEllipsoide(ray,scene.tabEllipsoide[i],current) && current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+    }
+    for (int i = 0; i < scene.nbCylinder; i++) {
+        if (IntersectCylinder(ray,scene.tabCylinder[i],current) && current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+    }
+    for (int i = 0; i < scene.nbCapsule; i++) {
+        if (IntersectCapsule(ray,scene.tabCapsule[i],current)&&current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+    }
+    for (int i = 0; i < scene.nbBox; i++) {
+        if (IntersectBox(ray ,scene.tabBox[i],current)&&current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+    }
+    for (int i = 0; i < scene.nbTorus; i++) {
+        if (IntersectTorus(Rotation(Tr1, angle , scene.tabTorus[i].c),scene.tabTorus[i],current)&&current.t<x.t) {
+            x=current;
+            x.n = Rotation(Ray(x.n,vec3(0)), -angle, scene.tabTorus[i].c).o;
+            ret=true;
+        }
+    }
+    for (int i = 0; i < scene.nbGoursat; i++) {
+        if (IntersectGoursat(ray ,scene.tabGoursat[i],current)&&current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+    }
+
 
 
 
