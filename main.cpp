@@ -1,27 +1,29 @@
+//////////////////////////////////////////////////////////////////////
+// Definition of primitives
 struct Sphere {
     vec3 c;// Center
     float r;// Radius
     int i;// Texture Id
 };
 
-struct Ellipsoide {
-    vec3 c; // Center
-    vec3 r; // Radius
-    int i; // Texture Id
+struct Ellipsoid {
+    vec3 c;// Center
+    vec3 r;// Radius
+    int i;// Texture Id
 };
 
 struct Cylinder {
     vec3 a;// Bottom Center
-    vec3 b;// Middle Center
+    vec3 b;// Top Center
     float r;// Radius
     int i;// Texture Id
 };
 
 struct Disc {
-    vec3 n;
-    vec3 p; // Center
-    float r;
-    int i ;
+    vec3 n;// Normal
+    vec3 p;// Center
+    float r;// Radius
+    int i ;// Texture Id
 };
 
 struct Capsule {
@@ -32,21 +34,21 @@ struct Capsule {
 };
 
 struct Box {
-    vec3 a;
-    vec3 b;
-    int i;
+    vec3 a;// First Corner
+    vec3 b;// Second Corner
+    int i;// Texture Id
 };
 
 struct Torus {
-    vec3 c; // Center
-    float _R; // Radius between center and the donut cirlce
-    float _r; // Radius between the donut circle and the outer circle
-    int i; // Texture Id
+    vec3 c;// Center
+    float _R;// Radius between center and the donut cirlce
+    float _r;// Radius between the donut circle and the outer circle
+    int i;// Texture Id
 };
 
 struct Goursat {
-    vec3 center; // Center
-    int i; // Texture Id
+    vec3 center;// Center
+    int i;// Texture Id
 };
 
 struct Plane {
@@ -72,39 +74,48 @@ struct Light {
 };
 
 struct Scene {
-    mat3 camera; // Camera position on the scene
+    mat3 camera;// Camera position on the scene
 
-    int nbSphere; // Number of displayed Spheres in the Scene
-    Sphere tabSphere[10]; // Array of Spheres
+    int nbSphere;// Number of displayed Spheres in the Scene
+    Sphere tabSphere[10];// Array of Spheres
 
-    Plane plane; // Plane of the Scene
+    Plane plane;// Plane of the Scene
 
-    int nbEllipsoide; // Number of displayed Ellipsoide in the Scene
-    Ellipsoide tabEllipsoide[10]; // Array of Ellipsoides
+    int nbEllipsoid;// Number of displayed Ellipsoid in the Scene
+    Ellipsoid tabEllipsoid[10];// Array of Ellipsoids
 
-    int nbCylinder; // Number of displayed Cylinder in the Scene
-    Cylinder tabCylindre[10]; // Array of Cylinders
+    int nbCylinder;// Number of displayed Cylinder in the Scene
+    Cylinder tabCylindre[10];// Array of Cylinders
 
-    int nbCapsule; // Number of displayed Capsule in the Scene
-    Capsule tabCapsule[10]; // Array of Capsules
+    int nbCapsule;// Number of displayed Capsule in the Scene
+    Capsule tabCapsule[10];// Array of Capsules
 
-    int nbBox; // Number of displayed Box in the Scene
-    Box tabBox[10]; // Array of Boxes
+    int nbBox;// Number of displayed Box in the Scene
+    Box tabBox[10];// Array of Boxes
 
-    int nbTorus; // Number of displayed Torus in the Scene
-    Torus tabTorus[10]; // Array of Torus
+    int nbTorus;// Number of displayed Torus in the Scene
+    Torus tabTorus[10];// Array of Torus
 
-    int nbLight; // Number of displayed Light sources in the Scene
-    Light tabLight[30]; // Array of Light sources
+    int nbLight;// Number of displayed Light sources in the Scene
+    Light tabLight[30];// Array of Light sources
 };
 
 struct Material {
     vec3 d;// Diffuse
     vec3 a;//ambiant
     vec3 s;//specular
-    float coef_s; // reflection coef
+    float coef_s;// reflection coef
 };
 
+//////////////////////////////////////////////////////////////////////////
+//Texturing
+
+/**
+ * @brief fonctions using for checkerboard Texture
+ * 
+ * @param vec2 p 
+ * @return float 
+ */
 float Checkers(in vec2 p) {
     // Filter kernel
     vec2 w = fwidth(p)+.001;
@@ -114,15 +125,23 @@ float Checkers(in vec2 p) {
     return 0.5 - 0.5 * i.x * i.y;
 }
 
-// Compute point on ray
+/**
+ * @brief Compute point on ray
+ * 
+ * @param Ray ray 
+ * @param float t 
+ * @return vec3 
+ */
 vec3 Point(Ray ray,float t) {
     return ray.o+t*ray.d;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Hashing function
-// Returns a random number in [-1,1]
-// p : Vector in space
+/**
+ * @brief Hashing function
+ * 
+ * @param p : Vector in space
+ * @return float : a random number in [-1,1]
+ */
 float Hash(in vec3 p)  
 {
     p  = fract( p*0.3199+0.152 );
@@ -130,8 +149,12 @@ float Hash(in vec3 p)
     return fract( p.x*p.y*p.z*(p.x+p.y+p.z) );
 }
 
-// Procedural value noise with cubic interpolation
-// x : Point 
+/**
+ * @brief Procedural value noise with cubic interpolation
+ * 
+ * @param p : Point 
+ * @return float : a random coefiscient
+ */
 float Noise(in vec3 p)
 {
     vec3 i = floor(p);
@@ -151,12 +174,18 @@ float Noise(in vec3 p)
                         Hash(i+vec3(1,1,1)),f.x),f.y),f.z);
 }
 
-// waveLength : jsp ALED
-// coef : coefficient multiplicateur de Noise qui diminue a chaque iteration
-// detail : nombre d'occurence sur la boucle, plus d'occurence = plus de bruit
-float Turbulence(in vec3 p, float waveLength, float coef, int iterations) {// somme de bruits 
+/**
+ * @brief Sum of Noize
+ * 
+ * @param p : Point
+ * @param waveLength : Controls the size of noise patterns
+ * @param coef : Coefficient for noise calculation
+ * @param iterations : Number of iterations for noise summation
+ * @return float : Resulting turbulence value
+ */
+float Turbulence(in vec3 p, float waveLength, float coef, int iterations) {
     float turbulence = coef * Noise(p/waveLength);
-    for (int i = 0; i < iterations; i++) { //boucle pour calculer la somme de bruit
+    for (int i = 0; i < iterations; i++) {
         coef = coef *0.5;
         waveLength = waveLength *0.5;
         turbulence = turbulence + coef*Noise(p/waveLength);
@@ -171,6 +200,12 @@ float Turbulence(in vec3 p, float waveLength, float coef, int iterations) {// so
 //     return vec3((a.c * v + b.c * (1.0-v)), (a.s * v + b.s * (1.0-v)) );//vrai interpolation de la couleur mais aussi de l'indice spéculaire
 // }
 
+/**
+ * @brief convert a float into the type int
+ * 
+ * @param a : Float
+ * @return int 
+ */
 int convert(float a){
     if (a < 0.0) {
         a= a-1.0;
@@ -178,7 +213,15 @@ int convert(float a){
     return int(a);
 }
 
-vec3 Damier(vec3 point, vec3 color1, vec3 color2 ){
+/**
+ * @brief Texture of a checkerboard
+ * 
+ * @param point : Point in the space
+ * @param color1 : First color of the checkerboard
+ * @param color2 : Second color of the checkerboard
+ * @return vec3 : Resulting texture
+ */
+vec3 checkerboard(vec3 point, vec3 color1, vec3 color2 ){
     vec3 w = fwidth(point)+.001;
     int x = convert(point.x);    //convertion en entier
     int y = convert(point.y);    //correction partie entière des valeurs négatifs pour evité le cas de int(0.4)=int(-0.4)
@@ -194,7 +237,14 @@ vec3 Damier(vec3 point, vec3 color1, vec3 color2 ){
 // vec3 veine = vec3(p.x+t,p.yz);
 //     if(veine.x<0.) return a;//couleur veine
 //     else return b;//couleur fond
-
+/**
+ * @brief Texture of a marble
+ * 
+ * @param point : Point in the space
+ * @param color1 : First material of the marble
+ * @param color2 : Second material of the marble
+ * @return Material : Resulting Marble
+ */
 Material MarbleTexture(vec3 point, Material color1, Material color2) {
     point = point + Turbulence(point, 1., 20., 10);
     float t = cos(point.x);
@@ -202,26 +252,34 @@ Material MarbleTexture(vec3 point, Material color1, Material color2) {
     return finalColor;
 }
 
+/**
+ * @brief Texture of a Veins marble
+ * 
+ * @param point : Point in the space
+ * @param color1 : Vein material of the marble
+ * @param color2 : back material of the marble
+ * @return Material : Resulting Veins Marble
+ */
 Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
     point = point + Turbulence(point, 5., 5.,10);
     float t = tan(point.x*3.);
     if(t < 4.) {
-        return color1;//couleur veine
+        return color1;
     } 
     else {
-        return color2;//couleur fond
+        return color2;
     }
-
-    //Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50.);
-    //return finalColor;
 }
-//////////////////////////////////////////////////////////////////////
 
-// Compute color
-// i : Texture index
-// p : Point
+/**
+ * @brief Definition of all texture in the scene
+ * 
+ * @param p : Point in the space
+ * @param i : Texture index
+ * @return Material : Specific material per index
+ */
 Material Texture(vec3 p,int i) {
-    if (i==1) {
+    if (i==1) { // uniform
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
         return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
     }
@@ -230,8 +288,8 @@ Material Texture(vec3 p,int i) {
         vec3 colorB = vec3(1.,0.8,0.2);
         return Material(mix(colorA, colorB, sin(iTime*0.5)),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
-    else if (i == 3) { // Damier
-        vec3 texture = Damier(p, vec3(1., 1., 1.), vec3(0., 0., 0.));
+    else if (i == 3) { // checkerboard
+        vec3 texture = checkerboard(p, vec3(1., 1., 1.), vec3(0., 0., 0.));
         return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
     }
     else if (i == 4) { // Marble
@@ -240,14 +298,13 @@ Material Texture(vec3 p,int i) {
         Material marble = MarbleTexture(p, color1, color2);
         return marble;
     }
-    else if (i == 5) { // Marble veineux
+    else if (i == 5) { // vein Marble
         Material color1 = Material(vec3(0.3, 0.3, 0.3), vec3(0.2,0.2,0.2), vec3(0, 0, 0), 1.);
         Material color2 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(3, 3, 3), 100.);
         Material marble = VeinMarbleTexture(p, color1, color2);
         return marble;
     }
-    else if (i == 0) {
-        //compute checkboard
+    else if (i == 0) { //classic checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
         return Material(col,vec3(0.2,0.2,0.2), vec3(0.9, 0.9, 0.9), 50.);
@@ -255,22 +312,19 @@ Material Texture(vec3 p,int i) {
     return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50.);
 }
 
-//fonction résolution equation du second degré:
-float solvRoots(float a, float b, float c) {
-    float t;
-    //on calcul le déterminant d pour trouver les racine de l'équation
-    float d = b*b - 4.*a*c;
-    if (d>0.){
-        float t1 = (-b - sqrt(d)) / (2.0*a);
-        float t2 = (-b + sqrt(d)) / (2.0*a);
-        float t = min(t1, t2);
-        return t;
-    }
-}
+//////////////////////////////////////////////////////////////////////
+//Intersection functions
 
-// Sphere intersection
-// ray : The ray
-//   x : Returned intersection information
+
+/**
+ * @brief Classic sphere intersection
+ * 
+ * @param ray : The ray
+ * @param sph : Structure information
+ * @param x : Returned intersection information
+ * @return true
+ * @return false
+ */
 bool IntersectSphere(Ray ray,Sphere sph,out Hit x) {
     vec3 oc = ray.o - sph.c;
     float b = dot(oc, ray.d);
@@ -287,9 +341,15 @@ bool IntersectSphere(Ray ray,Sphere sph,out Hit x) {
     return false;
 }
 
-// Plane intersection
-// ray : The ray
-//   x : Returned intersection information
+/**
+ * @brief Classic Plane intersection
+ * 
+ * @param ray : The ray
+ * @param pl : Structure information
+ * @param x : Returned intersection information
+ * @return true 
+ * @return false 
+ */
 bool IntersectPlane(Ray ray,Plane pl,out Hit x) {
     pl.n = normalize(pl.n);
     float t = -dot(ray.o-pl.p,pl.n)/dot(ray.d,pl.n);
@@ -301,7 +361,36 @@ bool IntersectPlane(Ray ray,Plane pl,out Hit x) {
     return false;
 }
 
-bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x) {
+/**
+ * @brief resolv second order equation : ax² + bx + c = 0
+ * 
+ * @param a : float
+ * @param b : float
+ * @param c : float
+ * @return float : min of the 2 solution
+ */
+float solvRoots(float a, float b, float c) {
+    float t;
+    //on calcul le déterminant d pour trouver les racine de l'équation
+    float d = b*b - 4.*a*c;
+    if (d>0.){
+        float t1 = (-b - sqrt(d)) / (2.0*a);
+        float t2 = (-b + sqrt(d)) / (2.0*a);
+        float t = min(t1, t2);
+        return t;
+    }
+}
+
+/**
+ * @brief intersect between a Ray and an Ellipsoid
+ * 
+ * @param ray : The ray
+ * @param ellip : Structure information
+ * @param x : Returned intersection information
+ * @return true 
+ * @return false 
+ */
+bool IntersectEllipsoid(Ray ray,Ellipsoid ellip,out Hit x) {
     vec3 oc=ray.o-ellip.c;
     float a = dot((ray.d/ellip.r),(ray.d/ellip.r));
     float b = 2.0*dot((oc/ellip.r), (ray.d/ellip.r));
@@ -311,7 +400,6 @@ bool IntersectEllipsoide(Ray ray,Ellipsoide ellip,out Hit x) {
     if (t>0.) {
         vec3 p=Point(ray,t);
         //vec3 normal = normalize( (p-ellip.c) / dot(ellip.r, ellip.r));
-          
         //x=Hit(t,normal,ellip.i);
         x=Hit(t,normalize(p-ellip.c),ellip.i);
         return true;
@@ -407,7 +495,7 @@ bool IntersectCapsule(Ray ray, Capsule cap, out Hit x) {
 float cbrt(in float x) { return sign(x) * pow(abs(x), 1.0 / 3.0); }
 
 int solveQuartic(in float a, in float b, in float c, in float d, in float e, inout vec4 roots) {
-    b /= a; c /= a; d /= a; e /= a; // Divide by leading coefficient to make it 1
+    b /= a; c /= a; d /= a; e /= a;// Divide by leading coefficient to make it 1
 
     // Depress the quartic to x^4 + px^2 + qx + r by substituting x-b/4a
     // This can be found by substituting x+u and the solving for the value
@@ -416,7 +504,7 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
     float p = (8.0 * c - 3.0 * bb) / 8.0;
     float q = (8.0 * d - 4.0 * c * b + bb * b) / 8.0;
     float r = (256.0 * e - 64.0 * d * b + 16.0 * c * bb - 3.0 * bb * bb) / 256.0;
-    int n = 0; // Root counter
+    int n = 0;// Root counter
 
     // Solve for a root to (t^2)^3 + 2p(t^2)^2 + (p^2 - 4r)(t^2) - q^2 which resolves the
     // system of equations relating the product of two quadratics to the depressed quartic
@@ -449,15 +537,15 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
         float a_1 = rb + lambda * a_2;
         float b_2 = a_2 + lambda;
 
-        float f = rc + lambda * a_1; // Evaluation of λ^3 + ra * λ^2 + rb * λ + rc
-        float f1 = a_1 + lambda * b_2; // Derivative
+        float f = rc + lambda * a_1;// Evaluation of λ^3 + ra * λ^2 + rb * λ + rc
+        float f1 = a_1 + lambda * b_2;// Derivative
 
-        lambda -= f / f1; // Newton iteration step
+        lambda -= f / f1;// Newton iteration step
     }
 
     // Solve two quadratics factored from the quartic using the cubic root
     if (lambda < 0.0) return n;
-    float t = sqrt(lambda); // Because we solved for t^2 but want t
+    float t = sqrt(lambda);// Because we solved for t^2 but want t
     float alpha = 2.0 * q / t, beta = lambda + ra;
 
     float u = 0.25 * b;
@@ -544,8 +632,8 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
         float w = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
 
         float l = - 4. * (tor._R * tor._R) * ((ray.d.x * ray.d.x) + (ray.d.y * ray.d.y));
-        float m = - 8. * (tor._R * tor._R) * ((ray.o.x * ray.d.x) + (ray.o.y * ray.d.y)); // faute ici pour le o-c
-        float n = - 4. * (tor._R * tor._R) * ((ray.o.x * ray.o.x) + (ray.o.y * ray.o.y)); // faute ici pour le o-c
+        float m = - 8. * (tor._R * tor._R) * ((ray.o.x * ray.d.x) + (ray.o.y * ray.d.y));// faute ici pour le o-c
+        float n = - 4. * (tor._R * tor._R) * ((ray.o.x * ray.o.x) + (ray.o.y * ray.o.y));// faute ici pour le o-c
 
 
         float f = dot(ray.d, ray.d);
@@ -553,8 +641,8 @@ bool IntersectTorus(Ray ray,Torus tor,out Hit x) { // normale 1 et normale 2 x e
         float h = dot(oc, oc) + (tor._R * tor._R) - (tor._r * tor._r);
 
         float i = - 4. * (tor._R * tor._R) * ((ray.d.x * ray.d.x) + (ray.d.y * ray.d.y));
-        float j = - 8. * (tor._R * tor._R) * ((oc.x * ray.d.x) + (oc.y * ray.d.y)); // faute ici pour le o-c
-        float k = - 4. * (tor._R * tor._R) * ((oc.x * oc.x) + (oc.y * oc.y)); // faute ici pour le o-c
+        float j = - 8. * (tor._R * tor._R) * ((oc.x * ray.d.x) + (oc.y * ray.d.y));// faute ici pour le o-c
+        float k = - 4. * (tor._R * tor._R) * ((oc.x * oc.x) + (oc.y * oc.y));// faute ici pour le o-c
 
 
         float a = u * u;
@@ -809,7 +897,7 @@ bool Intersect(Ray ray,inout Hit x) {
     const Sphere sph2=Sphere(vec3(0.,0.,2.),1.,2);
     const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
     
-    const Ellipsoide ellip1 = Ellipsoide(vec3(6., 3., 2.), vec3(1.,1.,0.5), 1);
+    const Ellipsoid ellip1 = Ellipsoid(vec3(6., 3., 2.), vec3(1.,1.,0.5), 1);
     
     const Cylinder cyll1 = Cylinder(vec3(0.,0.,0.), vec3(0., 0., 2.2), .75,3);
 
@@ -841,15 +929,18 @@ bool Intersect(Ray ray,inout Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    // if (IntersectSphere(homo,sph2,current) && current.t < x.t * length(scale) ) {
-    //     x=current;
-    //     ret=true;
-    // }
+    if (IntersectSphere(homo,sph2,current)) {
+        current=Homothetie(current, ray, homo, scale);
+        if(current.t<x.t){
+            x= current;
+            ret=true;
+        }
+    }
     if (IntersectPlane(ray,pl,current) && current.t<x.t) {
         x=current;
         ret=true;
     }
-    // if (IntersectEllipsoide(ray,ellip1,current) && current.t<x.t) {
+    // if (IntersectEllipsoid(ray,ellip1,current) && current.t<x.t) {
         // x=current;
         // ret=true;
     // }
@@ -861,21 +952,21 @@ bool Intersect(Ray ray,inout Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectCapsule(Rotation(ray, angle, FindTheCenter(cap.a, cap.b)),cap,current)&&current.t<x.t) {
-        x=current;
-        x.n = RotationNormal(x.n, -angle, FindTheCenter(cap.a, cap.b));
-        ret=true;
-    }
-    if (IntersectBox(Rotation(tr2, angle ,FindTheCenter(bx.a, bx.b)) ,bx,current)&&current.t<x.t) {
-        x=current;
-        x.n = RotationNormal(x.n, -angle, FindTheCenter(bx.a, bx.b));
-        ret=true;
-    }
-    if (IntersectTorus(Rotation(tr2, angle , tor1.c), tor1,current)&&current.t<x.t) {
-        x=current;
-        x.n = RotationNormal(x.n, -angle, tor1.c);
-        ret=true;
-    }
+    // if (IntersectCapsule(Rotation(ray, angle, cap.a),cap,current)&&current.t<x.t) {
+    //     x=current;
+    //     x.n = RotationNormal(x.n, -angle, cap.a);
+    //     ret=true;
+    // }
+    // if (IntersectBox(Rotation(tr2, angle ,FindTheCenter(bx.a, bx.b)) ,bx,current)&&current.t<x.t) {
+    //     x=current;
+    //     x.n = RotationNormal(x.n, -angle, FindTheCenter(bx.a, bx.b));
+    //     ret=true;
+    // }
+    // if (IntersectTorus(Rotation(tr2, angle , tor1.c), tor1,current)&&current.t<x.t) {
+    //     x=current;
+    //     x.n = RotationNormal(x.n, -angle, tor1.c);
+    //     ret=true;
+    // }
 // /*     if (IntersectTorus(ray,tor2,current)&&current.t<x.t) {
     //     x=current;
     //     ret=true;
@@ -995,32 +1086,32 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
 
     // Je dois calculer la lumiere spectrale et la lumiere diffus
     // Éclairage spéculaire             
-    vec3 camDir = normalize(camera.o - p); // Direction de la caméra  
+    vec3 camDir = normalize(camera.o - p);// Direction de la caméra  
     for (int i = 0; i < scene.nbLight; i++) {
          vec3 lightDirection = normalize(scene.tabLight[i].lightPos - p);
-         Ray r = Ray(p + n * 0.001, lightDirection); // le rayon que j'envoie de point d'intersect de mon objet
+         Ray r = Ray(p + n * 0.001, lightDirection);// le rayon que j'envoie de point d'intersect de mon objet
 
         randomHit = Hit( length(scene.tabLight[i].lightPos - p), vec3(0.), -1);
     
         if (!Intersect(r, randomHit) || randomHit.t >= length(scene.tabLight[i].lightPos - p)) {
         // if (true) {
-            vec3 reflectDir = reflect(-lightDirection, n); // Direction de réflexion de lumiere depuis mon objet   
-            float spec = pow(max(dot(camDir, reflectDir), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
+            vec3 reflectDir = reflect(-lightDirection, n);// Direction de réflexion de lumiere depuis mon objet   
+            float spec = pow(max(dot(camDir, reflectDir), 0.0),  m.coef_s);// shininess contrôle la netteté du reflet             
             vec3 specularColor = m.s * spec * scene.tabLight[i].lightColor;             // Éclairage diffus             
-            float diff = max(dot(n, lightDirection), 0.0); // Composante diffuse     
+            float diff = max(dot(n, lightDirection), 0.0);// Composante diffuse     
             vec3 diffuseColor = m.d * diff * scene.tabLight[i].lightColor /* (1. - aaaa - 0.)*/;
             // Couleur a retourner
             finalColor += (specularColor + diffuseColor);
             // finalColor = m.a;
         } else {
-            finalColor += vec3(0,0,0); //je retourne la couleur de mon ombre (noir)
+            finalColor += vec3(0,0,0);//je retourne la couleur de mon ombre (noir)
         }   
     }
     // Ambient occlusion
     //float ao = AmbientOcclusion(p, n, 16, camera); 
 
     // Combine direct and indirect lighting (ambient occlusion)
-    //vec3 indirectLight = ao * vec3(-0.1); // Adjust vec3 value to change the color
+    //vec3 indirectLight = ao * vec3(-0.1);// Adjust vec3 value to change the color
     //finalColor += indirectLight;
     return finalColor * (1.-ao );
 }
