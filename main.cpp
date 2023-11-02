@@ -744,7 +744,11 @@ Ray Homothetie(Ray ray, vec3 homo, vec3 tr) {
     return ray;
 }
 
-Ray RotationNormal(Ray ray, vec3 rot, vec3 tr) {
+vec3 FindTheCenter(vec3 cornerA, vec3 cornerB) {
+    return (cornerA + cornerB)/2.;
+}
+
+vec3 RotationNormal(vec3 normal, vec3 rot, vec3 tr) {
     //construire les matrices de rotations
     mat3 rotationX = mat3(
         1., 0.      , 0.       ,
@@ -761,14 +765,8 @@ Ray RotationNormal(Ray ray, vec3 rot, vec3 tr) {
         sin(rot.z), cos(rot.z) , 0.,
         0.      , 0.       , 1.
     );
-    ray.d = rotationX * rotationY * rotationZ * ray.d;
-    //ramener à 0
-    ray.o = Translation(ray.o, tr);
-    //effectuer la rotation
-    ray.o = rotationX * rotationY * rotationZ * ray.o;
-    //ramener à où c'était
-    ray.o = Translation(ray.o, -tr);
-    return ray;
+    normal = rotationX * rotationY * rotationZ * normal;
+    return normal;
 }
 
 
@@ -819,9 +817,9 @@ bool Intersect(Ray ray,inout Hit x) {
     
     const Disc ds = Disc(vec3(0.,0.,0.), normalize(vec3(0.,2.,1.)), 1.,1);
 
-    const Box bx = Box(vec3(-6.1, -3.1, 1.1), vec3(-4.1, 0.1, 2.1), 3);
+    const Box bx = Box(vec3(-6.1, -3.1, 1.1), vec3(-4.1, 0.1, 2.1), 1);
 
-    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 2);
+    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 1);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
 
@@ -831,7 +829,7 @@ bool Intersect(Ray ray,inout Hit x) {
     Ray Tr1 = Translation(ray, vec3(0.,4.,3.));
     Ray tr2 = Translation(ray, vec3(0.,0.,3.));
     // Ray rot1 = Rotation(Tr1, vec3(iTime, 0., 0.), tor1.c);
-    vec3 angle = vec3(iTime, iTime, iTime);
+    vec3 angle = vec3(cos(iTime), iTime, 0);
     //Rotation avec iTime et iTime ne fonctionne pas
 
     // on decomente ici et on comment dans la Fonction Shade et on peut voir l'OA
@@ -863,17 +861,19 @@ bool Intersect(Ray ray,inout Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    // if (IntersectCapsule(ray,cap,current)&&current.t<x.t) {
-    //     x=current;
-    //     ret=true;
-    // }
-//     if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
-//         x=current;
-//         ret=true;
-//     }
+    if (IntersectCapsule(Rotation(ray, angle, FindTheCenter(cap.a, cap.b)),cap,current)&&current.t<x.t) {
+        x=current;
+        x.n = RotationNormal(x.n, -angle, FindTheCenter(cap.a, cap.b));
+        ret=true;
+    }
+    if (IntersectBox(Rotation(tr2, angle ,FindTheCenter(bx.a, bx.b)) ,bx,current)&&current.t<x.t) {
+        x=current;
+        x.n = RotationNormal(x.n, -angle, FindTheCenter(bx.a, bx.b));
+        ret=true;
+    }
     if (IntersectTorus(Rotation(tr2, angle , tor1.c), tor1,current)&&current.t<x.t) {
         x=current;
-        x.n = RotationNormal(Ray(x.n,vec3(0)), -angle, tor1.c).o;
+        x.n = RotationNormal(x.n, -angle, tor1.c);
         ret=true;
     }
 // /*     if (IntersectTorus(ray,tor2,current)&&current.t<x.t) {
