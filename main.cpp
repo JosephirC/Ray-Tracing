@@ -1,4 +1,4 @@
-#define MAX_REFLECTION 8
+#define MAX_REFLECTION 4
 
 // Definition of primitives
 struct Sphere {
@@ -1470,14 +1470,14 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     
         if (!Intersect(r, randomHit) || randomHit.t >= length(scene.tabLight[i].lightPos - p)) {
         // if (true) {
-            vec3 reflectDir = reflect(-lightDirection, n);// Direction de réflexion de lumiere depuis mon objet   
+            vec3 reflectDirection = reflect(-lightDirection, n);// Direction de réflexion de lumiere depuis mon objet   
             
-            float spec = pow(max(dot(camDirection, reflectDir), 0.0),  m.coefShininess);// coefficient de shininess contrôle la netteté du reflet             
+            float spec = pow(max(dot(camDirection, reflectDirection), 0.0),  m.coefShininess);// coefficient de shininess contrôle la netteté du reflet             
             vec3 specularColor = m.specular * spec * scene.tabLight[i].lightColor;// Éclairage speculaire             
             
             float diff = max(dot(n, lightDirection), 0.0);     
             vec3 diffuseColor = m.diffuse * diff * scene.tabLight[i].lightColor;// Éclairage diffus
-           
+
             // Couleur a retourner
             finalColor += (specularColor + diffuseColor);
             // finalColor = m.a;
@@ -1490,6 +1490,58 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     return finalColor * (1. - ao );
 }
 
+vec3 MirrorReflection(Material mat, vec3 normal, vec3 p, Ray ray) {
+    vec3 resultColor = vec3(0.0);
+
+    for (int reflection = 0; reflection < MAX_REFLECTION; reflection++) {
+        Hit x;
+        bool idx = Intersect(ray, x);
+
+        if (idx) {
+            // Si le matériau est un miroir, calculez la couleur réfléchie
+            if (mat.reflexivity > 0.0) {
+                vec3 n = normal;
+                vec3 reflectDir = reflect(ray.direction, n);
+                ray = Ray(p + n * 0.001, reflectDir, false, false);
+
+                // Accumuler la couleur réfléchie avec la couleur accumulée précédente
+                resultColor += (1.0 - mat.reflexivity) * Color(mat, n, p, ray) + mat.mirrorColor;
+            }
+            else {
+                // Si ce n'est pas un miroir, calculez la couleur normale et terminez la boucle
+                resultColor += Color(mat, normal, p, ray);
+                break;
+            }
+        }
+        else {
+            // Si aucune intersection n'est trouvée, retournez la couleur d'arrière-plan
+            resultColor += Background(ray.direction);
+            break;
+        }
+    }
+
+    return resultColor;
+}
+
+// vec3 Shade(Ray ray) {
+//     Hit x;
+//     bool idx = Intersect(ray, x);
+    
+//     if (idx) {
+//         vec3 p = Point(ray, x.t);
+//         Material mat = Texture(p, x.id);
+
+//         if (mat.reflexivity > 0.1) {
+//             return ReflectiveShading(ray, x, mat);
+//         } else {
+//             return Color(mat, x.normal, p, ray);
+//         }
+//     } else {
+//         return Background(ray.direction);
+//     }
+// }
+
+
 // Rendering
 vec3 Shade(Ray ray) {
     // Intersect contains all the geo detection
@@ -1501,7 +1553,13 @@ vec3 Shade(Ray ray) {
         vec3 p = Point(ray, x.t);
         Material mat = Texture(p, x.id);
         // return x.n;//débug normale
-        return Color(mat, x.normal, p, ray);
+        
+        if (mat.reflexivity > 0.1) {
+            return MirrorReflection(mat, x.normal, p, ray);
+        }
+        else {
+            return Color(mat, x.normal, p, ray);
+        }
     }
     else {
         return Background(ray.direction);
@@ -1510,11 +1568,23 @@ vec3 Shade(Ray ray) {
     return vec3(0);
 }
 
-vec3 Shade2(Ray ray) {
-    vec3 accumulatedColor = vec3(0.0);
+vec3 mirror(Material mat, vec3 normal, vec3 p, Ray ray, out vec3 resultColor) {
+    vec3 reflectDir = reflect(ray.direction, normal);
+    ray = Ray(p + normal * 0.001, reflectDir, false, false);
+    resultColor += (1.0 - mat.reflexivity) * Color(mat, normal, p, ray) + mat.mirrorColor;
+    return resultColor;
+}
 
-    for (int reflection = 0; reflection < MAX_REFLECTION; ++reflection)
-    {
+void mirror2(Material mat, vec3 normal, vec3 p, Ray ray, inout vec3 resultColor) {
+    vec3 reflectDir = reflect(ray.direction, normal);
+    ray = Ray(p + normal * 0.001, reflectDir, false, false);
+    resultColor += (1.0 - mat.reflexivity) * Color(mat, normal, p, ray) + mat.mirrorColor;
+}
+
+vec3 NewShade2(Ray ray) {
+    vec3 resultColor = vec3(0.0);
+
+    for (int reflection = 0; reflection < MAX_REFLECTION; reflection++) {
         Hit x;
         //x = Hit(1000., vec3(0), -1);
         bool idx = Intersect(ray, x);
@@ -1525,27 +1595,59 @@ vec3 Shade2(Ray ray) {
 
             // Si le matériau est un miroir, calculez la couleur réfléchie
             if (mat.reflexivity > 0.1) {
-                vec3 n = x.normal;
-                vec3 reflectDir = reflect(ray.direction, n);
-                ray = Ray(p + n * 0.001, reflectDir, false, false);
-
-                // Accumuler la couleur réfléchie avec la couleur accumulée précédente
-                accumulatedColor += (1.0 - mat.reflexivity) * Color(mat, n, p, ray) + mat.mirrorColor;
+                mirror(mat, x.normal, p, ray, resultColor);
             }
             else {
                 // Si ce n'est pas un miroir, calculez la couleur normale et terminez la boucle
-                accumulatedColor += Color(mat, x.normal, p, ray);
+                resultColor += Color(mat, x.normal, p, ray);
                 break;
             }
         }
         else {
             // Si aucune intersection n'est trouvée, retournez la couleur d'arrière-plan
-            accumulatedColor += Background(ray.direction);
+            resultColor += Background(ray.direction);
             break;
         }
     }
 
-    return accumulatedColor;
+    return resultColor;
+}
+
+vec3 Shade2(Ray ray) {
+    vec3 resultColor = vec3(0.0);
+
+    for (int reflection = 0; reflection < MAX_REFLECTION; reflection++) {
+        Hit x;
+        //x = Hit(1000., vec3(0), -1);
+        bool idx = Intersect(ray, x);
+
+        if (idx) {
+            vec3 p = Point(ray, x.t);
+            Material mat = Texture(p, x.id);
+
+            // Si le matériau est un miroir, calculez la couleur réfléchie
+            if (mat.reflexivity > 0.) {
+                vec3 n = x.normal;
+                vec3 reflectDir = reflect(ray.direction, n);
+                ray = Ray(p + n * 0.001, reflectDir, false, false);
+
+                // Accumuler la couleur réfléchie avec la couleur accumulée précédente
+                resultColor += (1.0 - mat.reflexivity) * Color(mat, n, p, ray) + mat.mirrorColor;
+            }
+            else {
+                // Si ce n'est pas un miroir, calculez la couleur normale et terminez la boucle
+                resultColor += Color(mat, x.normal, p, ray);
+                break;
+            }
+        }
+        else {
+            // Si aucune intersection n'est trouvée, retournez la couleur d'arrière-plan
+            resultColor += Background(ray.direction);
+            break;
+        }
+    }
+
+    return resultColor;
 }
 
 /*
@@ -1558,7 +1660,7 @@ vec3 Shade(Ray ray) {
     if (idx) {
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
-        // return x.n;//débug normale
+        // return x.normal;//débug normale
         return Color(mat,x.n, p, ray);
     }
     else {
@@ -1569,24 +1671,43 @@ vec3 Shade(Ray ray) {
 }
 */
 
+vec3 Render(Ray ray) {
+    // Intersect contains all the geo detection
+    Hit x;
+    bool idx = Intersect(ray, x);
+    
+    if (idx) {
+        vec3 p = Point(ray, x.t);
+        Material mat = Texture(p, x.id);
+
+        if (mat.reflexivity > 0.1) {
+            return Shade2(ray);
+        }
+        else {
+            return Shade(ray);
+        }   
+    }
+    return vec3(0);
+}
+
 void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     // From uv which are the pixel coordinates in [0,1], change to [-1,1] and apply aspect ratio
-    vec2 uv=(-iResolution.xy+2.*fragCoord.xy)/iResolution.y;
+    vec2 uv=(-iResolution.xy + 2.* fragCoord.xy) / iResolution.y;
     
     // Mouse control
-    vec2 mouse=iMouse.xy/iResolution.xy;
+    vec2 mouse = iMouse.xy / iResolution.xy;
     
     // Ray origin
     //défini la position de la cam
-    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
-    vec3 ta=vec3(0.,0.,1.5);
-    mat3 ca=setCamera(ro,ta);
+    vec3 ro=13. * normalize(vec3(sin(2. * 3.14 * mouse.x), cos(2. * 3.14 * mouse.x), 1.4 * (mouse.y - .1)));
+    vec3 ta=vec3(0., 0., 1.5);
+    mat3 ca=setCamera(ro, ta);
     
     // Ray
-    vec3 rd=ca*normalize(vec3(uv.xy*tan(radians(22.5)),1.));
+    vec3 rd = ca*normalize(vec3(uv.xy * tan(radians(22.5)), 1.));
     
     // Render
-    vec3 col=Shade2(Ray(ro, rd, false, false));
+    vec3 col = Shade2(Ray(ro, rd, false, false));
     
-    fragColor=vec4(col,1.);
+    fragColor = vec4(col,1.);
 }
