@@ -1,3 +1,4 @@
+#define MAX_REFLECTION 5
 struct Sphere {
     vec3 c;// Center
     float r;// Radius
@@ -49,6 +50,11 @@ struct Goursat {
     int i; // Texture Id
 };
 
+struct Octaedre {
+    vec3 center; // Center
+    int i; // Texture Id
+};
+
 struct Plane {
     vec3 n;// Normal
     vec3 p;// Point
@@ -83,7 +89,7 @@ struct Scene {
     Ellipsoide tabEllipsoide[10]; // Array of Ellipsoides
 
     int nbCylinder; // Number of displayed Cylinder in the Scene
-    Cylinder tabCylindre[10]; // Array of Cylinders
+    Cylinder tabCylinder[10]; // Array of Cylinders
 
     int nbCapsule; // Number of displayed Capsule in the Scene
     Capsule tabCapsule[10]; // Array of Capsules
@@ -94,8 +100,14 @@ struct Scene {
     int nbTorus; // Number of displayed Torus in the Scene
     Torus tabTorus[10]; // Array of Torus
 
+    int nbGoursat; // Number of displayed EL Goursat in the Scene
+    Goursat tabGoursat[10]; // Array of EL Goursat
+
     int nbLight; // Number of displayed Light sources in the Scene
     Light tabLight[10]; // Array of Light sources
+
+    int nbObject;
+
 };
 
 struct Material {
@@ -103,6 +115,8 @@ struct Material {
     vec3 a;//ambiant
     vec3 s;//specular
     float coef_s; // reflection coef
+    float reflexivity; // reflexivity du materiel
+    vec3 mirror_color; // couleur du miroir
 };
 
 float Checkers(in vec2 p) {
@@ -198,7 +212,7 @@ vec3 Damier(vec3 point, vec3 color1, vec3 color2 ){
 Material MarbleTexture(vec3 point, Material color1, Material color2) {
     point = point + Turbulence(point, 1., 20., 10);
     float t = cos(point.x);
-    Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50.);
+    Material finalColor = Material(color1.d * t + color2.d*(0.6-t), vec3(0.2), color1.s * t + color2.s*(1.0-t), 50., 0., vec3(0.));
     return finalColor;
 }
 
@@ -225,34 +239,38 @@ Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
 Material Texture(vec3 p,int i) {
     if (i==1) {
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
-        return Material(vec3(.8,.5,.4), vec3(0.2, 0.2, 0.2), vec3(0.7, 0.7, 0.7), 50.);
+        return Material(vec3(.8,.5,.4), vec3(0.3, 0.3, 0.3), vec3(0.7, 0.7, 0.7), 50., 0., vec3(0.));
     }
     else if (i == 2) {
-        return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
+        return Material(vec3(.8,.5,.4),vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.) );
     }
     else if (i == 3) { // Damier
         vec3 texture = Damier(p, vec3(1., 1., 1.), vec3(0., 0., 0.));
-        return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50. );
+        return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.) );
     }
     else if (i == 4) { // Marble
-        Material color1 = Material(vec3(1.2, 1.2, 1.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50.);
-        Material color2 = Material(vec3(0.83, .83, .83), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
+        Material color1 = Material(vec3(1.2, 1.2, 1.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
+        Material color2 = Material(vec3(0.83, .83, .83), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.));
         Material marble = MarbleTexture(p, color1, color2);
         return marble;
     }
     else if (i == 5) { // Marble
-        Material color1 = Material(vec3(0.3, 0.3, 0.3), vec3(0.2,0.2,0.2), vec3(0, 0, 0), 1.);
-        Material color2 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(3, 3, 3), 100.);
+        Material color1 = Material(vec3(0.3, 0.3, 0.3), vec3(0.2,0.2,0.2), vec3(0, 0, 0), 1., 0., vec3(0.));
+        Material color2 = Material(vec3(0.9, 0.9, 0.2), vec3(0.7,0.7,0.7), vec3(3, 3, 3), 100., 0., vec3(0.));
         Material marble = VeinMarbleTexture(p, color1, color2);
         return marble;
+    }
+    else if (i==6) {
+        // return Material(vec3(.7), vec3(.8, .5, .4), 50.0, vec3(0.2), vec3(0.,0.,0.), 0.8);
+        return Material(vec3(.8,.5,.4), vec3(.7), vec3(0.2), 50., 1., vec3(0,0, 0.));
     }
     else if (i == 0) {
         //compute checkboard
         float f=Checkers(.5*p.xy);
         vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
-        return Material(col,vec3(0.2,0.2,0.2), vec3(0.9, 0.9, 0.9), 50.);
+        return Material(col, vec3(0.3, 0.3, 0.3), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
     }
-    return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50.);
+    return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.));
 }
 
 //fonction résolution equation du second degré:
@@ -721,6 +739,69 @@ bool IntersectGoursat(Ray ray, Goursat goursat, out Hit x) {
     return false;
 }
 
+bool IntersectOctaedre(Ray ray, Octaedre octa, out Hit x) {
+    vec3 oc = ray.o - octa.center;
+
+    float oX2 = oc.x * oc.x;
+    float oY2 = oc.y * oc.y;
+    float oZ2 = oc.z * oc.z;
+
+    float dX2 = ray.d.x * ray.d.x; // check if i should do `*` instead of `dot`    
+    float dY2 = ray.d.y * ray.d.y; // check if i should do `*` instead of `dot`
+    float dZ2 = ray.d.z * ray.d.z; // check if i should do `*` instead of `dot`
+
+    float TWOoXdX = 2. * ray.o.x * ray.d.x; // 2 * o.x * d.x
+    float TWOoYdY = 2. * ray.o.y * ray.d.y; // 2 * o.y * d.y
+    float TWOoZdZ = 2. * ray.o.z * ray.d.z; // 2 * o.z * d.z
+
+    float oXdX = ray.o.x * ray.d.x; // 2 * o.x * d.x
+    float oYdY = ray.o.y * ray.d.y; // 2 * o.y * d.y
+    float oZdZ = ray.o.z * ray.d.z; // 2 * o.z * d.z
+
+    float a = 8. * (dot(dY2, dX2) + dot(dZ2, dY2) + dot(dZ2, dX2));
+    float b = 8. * (dot(TWOoXdX, dY2) + dot(dX2, TWOoYdY) + dot(TWOoZdZ, dY2) + dot(TWOoYdY, dZ2) + dot(TWOoZdZ, dX2) + dot(TWOoXdX, dZ2));
+    float c = 8. * (dot(oX2, dY2) + dot(TWOoXdX, TWOoYdY) + dot(dX2, oY2) + dot(oZ2, dY2) + dot(TWOoZdZ, TWOoYdY) + dot(dZ2, oY2) + dot(oZ2, dX2) + dot(TWOoZdZ, TWOoXdX) + dot(dZ2, oX2)) + 4. * dot(ray.d, ray.d);
+    float d = 8. * (dot(oX2, TWOoYdY) + dot(TWOoXdX, oY2) + dot(oZ2, TWOoYdY) + dot(TWOoZdZ, oY2) + dot(oZ2, TWOoXdX) + dot(TWOoZdZ, oX2)) + 8. * (dot(ray.o, ray.d));
+    float e = 8. * (dot(oX2, oY2) + dot(oZ2, oY2) + dot(oZ2, oX2)) + 4. * dot(ray.o, ray.o) - 16.;
+    
+
+    float a1 = 8. * (dot(dY2, dX2) + dot(dZ2, dY2) + dot(dZ2, dX2));
+    float b1 = 8. * (2.* dot(oXdX, dY2) + 2.* dot(dX2, oYdY) + 2. * dot(oZdZ, dY2) + 2. * dot(oYdY, dZ2) + 2. * dot(oZdZ, dX2) + 2. * dot(oXdX, dZ2));
+    float c1 = 8. * (dot(oX2, dY2) + 4. * dot(oXdX, oYdY) + dot(dX2, oY2) + dot(oZ2, dY2) + 4. * dot(oZdZ, oYdY) + dot(dZ2, oY2) + dot(oZ2, dX2) + 4. * dot(oZdZ, oXdX) + dot(dZ2, oX2)) + 4. * dot(ray.d, ray.d);
+    float d1 = 8. * (2. * dot(oX2, oYdY) + 2. * dot(oXdX, oY2) + 2. * dot(oZ2, oYdY) + 2. * dot(oZdZ, oY2) + 2. * dot(oZ2, oXdX) + 2. * dot(oZdZ, oX2)) + 10. * (dot(ray.o, ray.d));
+    float e1 = 8. * (dot(oX2, oY2) + dot(oZ2, oY2) + dot(oZ2, oX2)) + 4. * dot(ray.o, ray.o) - 16.;
+
+    vec4 roots;
+    int nroots = solveQuartic(a1, b1, c1, d1, e1, roots);
+    
+    
+    if (nroots > 0) {
+        float t1, t2, t;
+        if (nroots == 2) {
+            t =  min(roots.x, roots.y);
+        }
+
+        if (nroots == 4) {
+            t1 = min(roots.x, roots.y);
+            t2 = min(roots.z, roots.w);
+            t = min (t1, t2);
+        }
+
+        if (t>0.) {
+            vec3 p=Point(ray, t);
+            vec3 normale;
+
+            normale.x = 16. * (oc.x + ray.d.x * t) * ( dot(oc.y, oc.y) + 2. * dot(oc.y, ray.d.y) + dot(ray.d.y * t, ray.d.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.d.z) + dot(ray.d.z * t, ray.d.z * t)) + 8. * (oc.x + ray.d.x * t);
+            normale.y = 16. * (oc.y + ray.d.y * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.d.x) + dot(ray.d.y * t, ray.d.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.d.z) + dot(ray.d.z * t, ray.d.z * t)) + 8. * (oc.y + ray.d.y * t);
+            normale.z = 16. * (oc.z + ray.d.z * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.d.x) + dot(ray.d.y * t, ray.d.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.d.z) + dot(ray.d.z * t, ray.d.z * t)) + 8. * (oc.z + ray.d.z * t);
+
+            x=Hit(t, normalize(normale), octa.i);
+            return true;
+        }
+    }
+    return false;
+}
+
 Ray Translation(Ray ray, vec3 p) {
     return Ray(ray.o - p, ray.d);
 }
@@ -756,31 +837,60 @@ Ray Rotation(Ray ray, vec3 rot, vec3 tr) {
     return ray;
 }
 
+Scene scene1(){
+
+    Scene scene;
+
+    scene.nbSphere = 1;
+    scene. nbEllipsoide = 1;
+    scene.nbCylinder = 1;
+    scene.nbCapsule = 1;
+    scene.nbBox = 1;
+    scene.nbTorus = 1;
+    scene.nbGoursat = 1;
+    scene.nbLight = 1;
+    
+    scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
+    scene.tabSphere[0] = Sphere(vec3(3.,4.,1.),1.,1);
+    scene.tabEllipsoide[0] = Ellipsoide(vec3(5., 0., 0.), vec3(1.,1.,0.5), 5);
+    scene.tabCylinder[0] = Cylinder(vec3(3.,3.,0.), vec3(3., 3., 2.1), .75, 3);
+    scene.tabCapsule[0] = Capsule(vec3(0.,2.,2.), vec3(-2., 2., 3.), 0.5 ,1);
+    scene.tabBox[0] = Box(vec3(-4., -3., 0.), vec3(-2.5, 3., 5.), 5);
+    scene.tabTorus[0] = Torus(vec3(0., 0., 0.), 1., .5, 3);
+    scene.tabGoursat[0] = Goursat(vec3(0., 0., 2.1), 1);
+
+    scene.nbObject = 7;
+
+    return scene;
+}
+
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
 // Je calcule l'intersect avec ray depuis ma camera jusqu a l'infini
 bool Intersect(Ray ray,out Hit x) {
     // Spheres
-    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,1);
-    const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,3);
-    const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
+    const Sphere sph1=Sphere(vec3(3.,4.,1.),1.,6);
+    const Sphere sph2=Sphere(vec3(1.,1.,1.),1.,1);
+    const Plane pl=Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
     
-    const Ellipsoide ellip1 = Ellipsoide(vec3(0., 0., 0.), vec3(1.,1.,0.5), 1);
+    const Ellipsoide ellip1 = Ellipsoide(vec3(5., 0., 0.), vec3(1.,1.,0.5), 5);
     
-    const Cylinder cyll1 = Cylinder(vec3(3.,3.,0.), vec3(3., 3., 2.), .75,3);
+    const Cylinder cyll1 = Cylinder(vec3(3.,3.,0.), vec3(3., 3., 2.1), .75, 3);
 
     const Capsule cap = Capsule(vec3(0.,2.,2.), vec3(-2., 2., 3.), 0.5 ,1);
     
     const Disc ds = Disc(vec3(0.,0.,1.), normalize(vec3(0.,2.,1.)), 1.,1);
 
-    const Box bx = Box(vec3(-6., -3., 0.), vec3(-4., 0., 2.), 4);
+    const Box bx = Box(vec3(-4., -3., 0.), vec3(-2.5, 3., 5.), 5);
 
-    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 3);
+    const Torus tor1 = Torus(vec3(0., 0., 0.), 1., .5, 6);
     //const Torus tor2 = Torus(vec3(5., 0., 2.), 1., 0.75, 1);
     //const Torus tor3 = Torus(vec3(-2., -4., 4.), 1.7, 0.5, 1);
 
-    const Goursat surp = Goursat(vec3(0., 0., 3.), 1);
+    const Goursat surp = Goursat(vec3(0., 0., 2.1), 1);
+
+    const Octaedre oct = Octaedre(vec3(0., 0., 0.),1); 
 
     Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
     // Ray rot1 = Rotation(Tr1, vec3(iTime, 0., 0.), tor1.c);
@@ -788,22 +898,73 @@ bool Intersect(Ray ray,out Hit x) {
     //Rotation avec iTime et iTime ne fonctionne pas
 
     // on decomente ici et on comment dans la Fonction Shade et on peut voir l'OA
-    // x = Hit(1000., vec3(0.), -1);
+    x = Hit(1000., vec3(0.), -1);
+
+    Scene scene = scene1();
 
     Hit current;
     bool ret=false;
-    if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
+
+    /*****TEST MULTI SCENE *****/
+
+    if (IntersectPlane(ray,scene.plane,current) && current.t<x.t) {
         x=current;
         ret=true;
     }
+
+    for(int i = 0; i < scene.nbSphere; i++){
+        if (IntersectSphere(ray, scene.tabSphere[i], current) && current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+        if (IntersectEllipsoide(Tr1,ellip1,current) && current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+        // if (IntersectCylinder(ray,cyll1,current) && current.t<x.t) {
+        //     x=current;
+        //     ret=true;
+        // }
+        if (IntersectCapsule(ray,cap,current)&&current.t<x.t) {
+            x=current;
+            ret=true;
+        }
+        // if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
+        //     x=current;
+        //     ret=true;
+        // }
+        if (IntersectTorus(Rotation(Tr1, angle , tor1.c),tor1,current)&&current.t<x.t) {
+            x=current;
+            x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
+            ret=true;
+        }
+
+        // if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
+        //     x=current;
+        //     ret=true;
+        // }
+
+    }
+
+
+
+
+
+
+    /*****TEST MULTI SCENE *****/
+
+    // if (IntersectSphere(Tr1,sph1,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     // if (IntersectSphere(ray,sph2,current) && current.t<x.t) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectPlane(ray,pl,current) && current.t<x.t) {
-        x=current;
-        ret=true;
-    }
+    // if (IntersectPlane(ray,pl,current) && current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     // if (IntersectEllipsoide(Tr1,ellip1,current) && current.t<x.t) {
     //     x=current;
     //     ret=true;
@@ -812,18 +973,18 @@ bool Intersect(Ray ray,out Hit x) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectCylinder(ray,cyll1,current) && current.t<x.t) {
-        x=current;
-        ret=true;
-    }
+    // if (IntersectCylinder(ray,cyll1,current) && current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     // if (IntersectCapsule(ray,cap,current)&&current.t<x.t) {
     //     x=current;
     //     ret=true;
     // }
-    if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
-        x=current;
-        ret=true;
-    }
+    // if (IntersectBox(ray ,bx,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
     // if (IntersectTorus(Rotation(Tr1, angle , tor1.c),tor1,current)&&current.t<x.t) {
     //     x=current;
     //     x.n = Rotation(Ray(x.n,vec3(0)), -angle, tor1.c).o;
@@ -838,6 +999,10 @@ bool Intersect(Ray ray,out Hit x) {
         ret=true;
     } */
     // if (IntersectGoursat(ray ,surp,current)&&current.t<x.t) {
+    //     x=current;
+    //     ret=true;
+    // }
+    // if (IntersectOctaedre(Tr1 ,oct,current)&&current.t<x.t) {
     //     x=current;
     //     ret=true;
     // }
@@ -909,13 +1074,12 @@ mat3 setCamera(in vec3 ro,in vec3 ta) {
 // n : normal
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Scene scene;
-    scene.nbLight = 1 ;
-    // scene.tabLight[0].lightPos = vec3(3,4,9);
-    // scene.tabLight[0].lightColor = vec3(1,1,1);
+    scene.nbLight = 2 ;
+    scene.tabLight[0].lightPos = vec3(10,10,8);
+    scene.tabLight[0].lightColor = vec3(1,1,1);
 
-    // scene.tabLight[1].lightPos = vec3(0,4,5);
-    // scene.tabLight[1].lightColor = vec3(1,1,1);
-
+    scene.tabLight[1].lightPos = vec3(0,4,5);
+    scene.tabLight[1].lightColor = vec3(1,1,1);
 
     // Box wiht ambient occlusion light testing
 
@@ -924,17 +1088,17 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     // scene.tabLight[0].lightColor = vec3(1,1,1);
 
     // testing
-    scene.tabLight[0].lightPos = vec3(5,5,10.);
+    // scene.tabLight[0].lightPos = vec3(5,5,10.);
 
     // scene.tabLight[0].lightPos = vec3(-1,-9,2.4);
-    scene.tabLight[0].lightColor = vec3(1,1,1);
+    // scene.tabLight[0].lightColor = vec3(1,1,1);
 
     Ray rotLight = Rotation(Ray(scene.tabLight[0].lightPos, vec3(0)), vec3(0, 0, iTime), vec3(1, 0, 0));
 
     // Pour faire une rotation sur la lumiere
-    scene.tabLight[0].lightPos = rotLight.o; 
+    // scene.tabLight[0].lightPos = rotLight.o; 
 
-    // scene.tabLight[1].lightPos = vec3(-2,-2,2.4);
+    // scene.tabLight[1].lightPos = vec3(-2,-2,12);
     // scene.tabLight[1].lightColor = vec3(1,1,1);
 
     // scene.tabLight[2].lightPos = vec3(1,5,4);
@@ -961,7 +1125,7 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
             float spec = pow(max(dot(camDir, reflectDir), 0.0),  m.coef_s); // shininess contrôle la netteté du reflet             
             vec3 specularColor = m.s * spec * scene.tabLight[i].lightColor;             // Éclairage diffus             
             float diff = max(dot(n, lightDirection), 0.0); // Composante diffuse     
-            vec3 diffuseColor = m.d * diff * scene.tabLight[i].lightColor /* (1. - aaaa - 0.)*/;
+            vec3 diffuseColor = m.d * diff * scene.tabLight[i].lightColor;
             // Couleur a retourner
             finalColor += (specularColor + diffuseColor);
             // finalColor = m.a;
@@ -982,13 +1146,13 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
 vec3 Shade(Ray ray) {
     // Intersect contains all the geo detection
     Hit x;
-    x= Hit(1000.,vec3(0),-1);
+    // x= Hit(1000.,vec3(0),-1);
     bool idx = Intersect(ray,x);
     
     if (idx) {
         vec3 p=Point(ray,x.t);
         Material mat=Texture(p,x.i);
-        //return x.n;//débug normale
+        // return x.n;//débug normale
         return Color(mat,x.n, p, ray);
     }
     else {
@@ -997,6 +1161,65 @@ vec3 Shade(Ray ray) {
     
     return vec3(0);
 }
+
+vec3 Shade2(Ray ray) {
+    vec3 accumulatedColor = vec3(0.0);
+
+    for (int reflection = 0; reflection < MAX_REFLECTION; ++reflection)
+    {
+        Hit x;
+        x = Hit(1000., vec3(0), -1);
+        bool idx = Intersect(ray, x);
+
+        if (idx) {
+            vec3 p = Point(ray, x.t);
+            Material mat = Texture(p, x.i);
+
+            // Si le matériau est un miroir, calculez la couleur réfléchie
+            if (mat.reflexivity > 0.1) {
+                vec3 n = x.n;
+                vec3 reflectDir = reflect(ray.d, n);
+                ray = Ray(p + n * 0.001, reflectDir);
+
+                // Accumuler la couleur réfléchie avec la couleur accumulée précédente
+                accumulatedColor += (1.0 - mat.reflexivity) * Color(mat, n, p, ray) + mat.mirror_color;
+            }
+            else {
+                // Si ce n'est pas un miroir, calculez la couleur normale et terminez la boucle
+                accumulatedColor += Color(mat, x.n, p, ray);
+                break;
+            }
+        }
+        else {
+            // Si aucune intersection n'est trouvée, retournez la couleur d'arrière-plan
+            accumulatedColor += Background(ray.d);
+            break;
+        }
+    }
+
+    return accumulatedColor;
+}
+
+/*
+vec3 Shade(Ray ray) {
+    // Intersect contains all the geo detection
+    Hit x;
+    // x= Hit(1000.,vec3(0),-1);
+    bool idx = Intersect(ray,x);
+    
+    if (idx) {
+        vec3 p=Point(ray,x.t);
+        Material mat=Texture(p,x.i);
+        // return x.n;//débug normale
+        return Color(mat,x.n, p, ray);
+    }
+    else {
+        return Background(ray.d);
+    }
+    
+    return vec3(0);
+}
+*/
 
 void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     // From uv which are the pixel coordinates in [0,1], change to [-1,1] and apply aspect ratio
@@ -1007,7 +1230,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     
     // Ray origin
     //défini la position de la cam
-    vec3 ro=20.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
+    vec3 ro=13.*normalize(vec3(sin(2.*3.14*mouse.x),cos(2.*3.14*mouse.x),1.4*(mouse.y-.1)));
     vec3 ta=vec3(0.,0.,1.5);
     mat3 ca=setCamera(ro,ta);
     
@@ -1015,7 +1238,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     vec3 rd=ca*normalize(vec3(uv.xy*tan(radians(22.5)),1.));
     
     // Render
-    vec3 col=Shade(Ray(ro,rd));
+    vec3 col=Shade2(Ray(ro,rd));
     
     fragColor=vec4(col,1.);
 }
