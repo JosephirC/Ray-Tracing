@@ -949,7 +949,7 @@ bool IntersectOctaeder(Ray ray, Octaeder octa, out Hit x) {
             t = min (t1, t2);
         }
 
-        if (t>0.) {
+        if (t > 0.) {
             vec3 p = Point(ray, t);
             vec3 normale;
 
@@ -1008,9 +1008,9 @@ bool IntersectPipeConnector(Ray ray, PipeConnector pip, out Hit x) {
 
     float p = 2. * (dot(ocx2, ocy2) + dot(ocy2, ocz2) + dot(ocz2, ocx2));
 
-    float q = -5. * (dot(ray.direction, ray.direction));
-    float r = -5. * (2. * (dot(oc, ray.direction)));
-    float s = -5. * (dot(oc, oc)) - 5. -(50. + 20. * cos(iTime));
+    float q = -3. * (dot(ray.direction, ray.direction));
+    float r = -3. * (2. * (dot(oc, ray.direction)));
+    float s = -3. * (dot(oc, oc)) - 5. -(50. + 20. * cos(iTime));
 
     float f = l;
     float g = m;
@@ -1032,13 +1032,22 @@ bool IntersectPipeConnector(Ray ray, PipeConnector pip, out Hit x) {
             t = min (t1, t2);
         }
 
-        if (t>0.) {
+        if (t > 0.) {
             vec3 p = Point(ray, t);
             vec3 normale;
 
-            normale.x = 4. * (oc.x + ray.direction.x * t) * ( dot(oc.y, oc.y) + 2. * dot(oc.y, ray.direction.y) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.x + ray.direction.x * t);
-            normale.y = 4. * (oc.y + ray.direction.y * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.y + ray.direction.y * t);
-            normale.z = 4. * (oc.z + ray.direction.z * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.z + ray.direction.z * t);
+            normale.x = 4. * (oc.x + ray.direction.x * t) * ( dot(oc.y, oc.y) + 2. * dot(oc.y, ray.direction.y) 
+                            + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) 
+                            + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) 
+                            + 6. * (oc.x + ray.direction.x * t);
+            normale.y = 4. * (oc.y + ray.direction.y * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) 
+                            + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) 
+                            + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) 
+                            + 6. * (oc.y + ray.direction.y * t);
+            normale.z = 4. * (oc.z + ray.direction.z * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) 
+                            + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) 
+                            + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t))
+                            + 6. * (oc.z + ray.direction.z * t);
 
             x = Hit(t, normalize(normale), pip.id);
             return true;
