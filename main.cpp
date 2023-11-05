@@ -57,6 +57,11 @@ struct Octaeder {
     int id;// Texture Id
 };
 
+struct PipeConnector {
+    vec3 center;// Center
+    int id;// Texture Id
+};
+
 struct Plane {
     vec3 normal;// Normal
     vec3 point;// Point
@@ -111,6 +116,9 @@ struct Scene {
 
     int nbOctaeder;// Number of displayed Octaeder in the Scene
     Octaeder tabOctaeder[10];// Array of Octaeders
+
+    int nbPipeConnector;// Number of displayed PipeConnector in the Scene 
+    PipeConnector tabPipeConnector[10];// Array of PipeConnector
 
     int nbLight;// Number of displayed Light sources in the Scene
     Light tabLight[10];// Array of Light sources
@@ -202,11 +210,11 @@ float Noise(in vec3 p)
  * @return float : Resulting turbulence value
  */
 float Turbulence(in vec3 p, float waveLength, float coef, int iterations) {// somme de bruits 
-    float turbulence = coef * Noise(p/waveLength);
+    float turbulence = coef * Noise(p / waveLength);
     for (int i = 0; i < iterations; i++) { //boucle pour calculer la somme de bruit
-        coef = coef *0.5;
-        waveLength = waveLength *0.5;
-        turbulence = turbulence + coef*Noise(p/waveLength);
+        coef = coef * 0.5;
+        waveLength = waveLength * 0.5;
+        turbulence = turbulence + coef * Noise(p / waveLength);
     }
     return turbulence;
 }
@@ -226,7 +234,7 @@ float Turbulence(in vec3 p, float waveLength, float coef, int iterations) {// so
  */
 int convert(float a){
     if (a < 0.0) {
-        a= a-1.0;
+        a= a - 1.0;
     }
     return int(a);
 }
@@ -240,12 +248,12 @@ int convert(float a){
  * @return vec3 : Resulting texture
  */
 vec3 Checkboard(vec3 point, vec3 color1, vec3 color2 ){
-    vec3 w = fwidth(point)+.001;
+    vec3 w = fwidth(point) +.001;
     int x = convert(point.x);    //convertion en entier
     int y = convert(point.y);    //correction partie entière des valeurs négatifs pour evité le cas de int(0.4)=int(-0.4)
     int z = convert(point.z);
 
-        if ((x + y + z) %2 == 0) {//modulo 2 pour faire 2 cas: coordonées paire, coordonées impaire
+        if ((x + y + z) % 2 == 0) {//modulo 2 pour faire 2 cas: coordonées paire, coordonées impaire
         return color1 / w;
     } else {
         return color2 / w;
@@ -280,7 +288,7 @@ Material MarbleTexture(vec3 point, Material color1, Material color2) {
  * @return Material : Resulting Veins Marble
  */
 Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
-    point = point + Turbulence(point, 5., 5.,10);
+    point = point + Turbulence(point, 5., 5., 10);
     float t = tan(point.x*3.);
     if(t < 4.) {
         return color1;
@@ -298,7 +306,7 @@ Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
  * @return Material : Specific material per index
  */
 Material Texture(vec3 p, int i) {
-    if (i==1) { // uniform
+    if (i == 1) { // uniform
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
         return Material(vec3(.8,.5,.4), vec3(0.3, 0.3, 0.3), vec3(0.7, 0.7, 0.7), 50., 0., vec3(0.));
     }
@@ -345,10 +353,10 @@ Material Texture(vec3 p, int i) {
 float solvRoots(float a, float b, float c) {
     float t;
     //on calcul le déterminant d pour trouver les racine de l'équation
-    float d = b*b - 4.*a*c;
-    if (d>0.){
-        float t1 = (-b - sqrt(d)) / (2.0*a);
-        float t2 = (-b + sqrt(d)) / (2.0*a);
+    float d = b * b - 4. * a * c;
+    if (d > 0.){
+        float t1 = (-b - sqrt(d)) / (2.0 * a);
+        float t2 = (-b + sqrt(d)) / (2.0 * a);
         float t = min(t1, t2);
         return t;
     }
@@ -394,7 +402,7 @@ bool IntersectSphere(Ray ray, Sphere sph, out Hit x) {
 bool IntersectPlane(Ray ray, Plane pl, out Hit x) {
     pl.normal = normalize(pl.normal);
     float t = -dot(ray.origin - pl.point, pl.normal) / dot(ray.direction, pl.normal);
-    if (t>0.) {
+    if (t > 0.) {
         vec3 p = Point(ray, t);
         x = Hit(t, pl.normal, pl.id);
         return true;
@@ -523,11 +531,11 @@ bool IntersectCapsule(Ray ray, Capsule cap, out Hit x) {
     Sphere sph2 = Sphere(cap.topCenter, cap.radius, cap.id);
     bool b1 = IntersectSphere(ray, sph1, x_);
     if (b1 && x_.t < x.t) {
-        x=x_;
+        x = x_;
     }
     bool b2 = IntersectSphere(ray, sph2, x_);
     if (b2 && x_.t < x.t) {
-        x=x_;
+        x = x_;
     }
     Cylinder cyl;
     cyl.bottomCenter = cap.bottomCenter;
@@ -536,7 +544,7 @@ bool IntersectCapsule(Ray ray, Capsule cap, out Hit x) {
     cyl.id = cap.id;
     bool body = IntersectCylinderBody(ray, cyl, x_);
     if (body && x_.t < x.t) {
-        x=x_;
+        x = x_;
     }
     return b1 || body || b2;  
 }
@@ -779,8 +787,8 @@ bool IntersectTorus(Ray ray, Torus tor, out Hit x) {
                 //zab.z = tor.c.z;
                 zab.z=0.;
                 
-                //x=Hit(t,normalize(nor),tor.i);
-                x=Hit(t, normalize(p - normale),tor.id);
+                //x = Hit(t,normalize(nor),tor.i);
+                x = Hit(t, normalize(p - normale),tor.id);
 
                 return true;
             }
@@ -837,7 +845,7 @@ bool IntersectGoursat(Ray ray, Goursat goursat, out Hit x) {
         }
 
         if (t > 0.) {
-            vec3 p=Point(ray, t);
+            vec3 p = Point(ray, t);
             vec3 normale;
 
             float ocX2 = oc.x * oc.x;
@@ -874,7 +882,7 @@ bool IntersectGoursat(Ray ray, Goursat goursat, out Hit x) {
 }
 
 /**
- * @brief intersect between a Ray and a Goursat Octaeder
+ * @brief intersect between a Ray and an Octaeder
  * 
  * @param ray : The ray
  * @param octa : Structure information
@@ -884,55 +892,8 @@ bool IntersectGoursat(Ray ray, Goursat goursat, out Hit x) {
  */
 bool IntersectOctaeder(Ray ray, Octaeder octa, out Hit x) {
     vec3 oc = ray.origin - octa.center;
-
-    float oX2 = oc.x * oc.x;
-    float oY2 = oc.y * oc.y;
-    float oZ2 = oc.z * oc.z;
-
-    float dX2 = ray.direction.x * ray.direction.x; // check if i should do `*` instead of `dot`    
-    float dY2 = ray.direction.y * ray.direction.y; // check if i should do `*` instead of `dot`
-    float dZ2 = ray.direction.z * ray.direction.z; // check if i should do `*` instead of `dot`
-
-    float TWOoXdX = 2. * ray.origin.x * ray.direction.x; // 2 * o.x * d.x
-    float TWOoYdY = 2. * ray.origin.y * ray.direction.y; // 2 * o.y * d.y
-    float TWOoZdZ = 2. * ray.origin.z * ray.direction.z; // 2 * o.z * d.z
-
-    float oXdX = ray.origin.x * ray.direction.x; // 2 * o.x * d.x
-    float oYdY = ray.origin.y * ray.direction.y; // 2 * o.y * d.y
-    float oZdZ = ray.origin.z * ray.direction.z; // 2 * o.z * d.z
-
-    float a = 8. * (dot(dY2, dX2) + dot(dZ2, dY2) + dot(dZ2, dX2));
-    float b = 8. * (dot(TWOoXdX, dY2) + dot(dX2, TWOoYdY) + dot(TWOoZdZ, dY2) + dot(TWOoYdY, dZ2) + dot(TWOoZdZ, dX2) + dot(TWOoXdX, dZ2));
-    float c = 8. * (dot(oX2, dY2) + dot(TWOoXdX, TWOoYdY) + dot(dX2, oY2) + dot(oZ2, dY2) + dot(TWOoZdZ, TWOoYdY) + dot(dZ2, oY2) + dot(oZ2, dX2) + dot(TWOoZdZ, TWOoXdX) + dot(dZ2, oX2)) + 4. * dot(ray.direction, ray.direction);
-    float d = 8. * (dot(oX2, TWOoYdY) + dot(TWOoXdX, oY2) + dot(oZ2, TWOoYdY) + dot(TWOoZdZ, oY2) + dot(oZ2, TWOoXdX) + dot(TWOoZdZ, oX2)) + 8. * (dot(ray.origin, ray.direction));
-    float e = 8. * (dot(oX2, oY2) + dot(oZ2, oY2) + dot(oZ2, oX2)) + 4. * dot(ray.origin, ray.origin) - 16.;
-    
-
-    float a1 = 8. * (dot(dY2, dX2) + dot(dZ2, dY2) + dot(dZ2, dX2));
-
-    float b1 = 8. * (2.* dot(oXdX, dY2) + 2.* dot(dX2, oYdY) + 2. * dot(oZdZ, dY2) + 2. * dot(oYdY, dZ2) + 2. * dot(oZdZ, dX2) + 2. * dot(oXdX, dZ2));
-    
-    float b2 = 8. * (2.* dot(dot(oc.x, ray.direction.x), dot(ray.direction.y, ray.direction.y)) + 2.* dot(dot(oc.y, ray.direction.y), dot(ray.direction.x, ray.direction.x)) + 2. * dot(dot(oc.z, ray.direction.z), dot(ray.direction.y, ray.direction.y)) + 2. * dot(dot(oc.y, ray.direction.y), dot(ray.direction.z, ray.direction.z)) + 2. * dot(dot(oc.z, ray.direction.z), dot(ray.direction.x, ray.direction.x)) + 2. * dot(dot(oc.x, ray.direction.x), dot(ray.direction.z, ray.direction.z)));
-    
-    float c1 = 8. * (dot(oX2, dY2) + 4. * dot(oXdX, oYdY) + dot(dX2, oY2) + dot(oZ2, dY2) + 4. * dot(oZdZ, oYdY) + dot(dZ2, oY2) + dot(oZ2, dX2) + 4. * dot(oZdZ, oXdX) + dot(dZ2, oX2)) + 4. * dot(ray.direction, ray.direction);
-
-    float c2 = 8. * (dot(oX2, dY2) + dot(2. * dot(oc.x, ray.direction.x), 2. * dot(oc.y, ray.direction.y)) + dot(dot(ray.direction.x, ray.direction.x), dot(oc.y, oc.y)) + dot(dot(ray.direction.y, ray.direction.y), dot(oc.z, oc.z)) + dot(2. * dot(oc.z, ray.direction.z), 2. * dot(oc.y, ray.direction.y)) + dot(dot(ray.direction.z, ray.direction.z), dot(oc.y, oc.y)) + dot(dot(ray.direction.x, ray.direction.x), dot(oc.z, oc.z)) + dot(2. * dot(oc.z, ray.direction.z), 2. * dot(oc.x, ray.direction.x)) + dot(dot(ray.direction.z, ray.direction.z), dot(oc.x, oc.x))) + 4. * dot(ray.direction, ray.direction);
-
-    float d1 = 8. * (2. * dot(oX2, oYdY) + 2. * dot(oXdX, oY2) + 2. * dot(oZ2, oYdY) + 2. * dot(oZdZ, oY2) + 2. * dot(oZ2, oXdX) + 2. * dot(oZdZ, oX2)) + 8. * (dot(ray.origin, ray.direction));
-    
-    float d2 = 8. * (dot(dot(oc.x, oc.x), 2. * dot(oc.y, ray.direction.y)) + 2. * dot(dot(oc.x, oc.x), dot(oc.y, oc.y)) + dot(dot(oc.z, oc.z), 2. * dot(oc.y, ray.direction.y)) + 2. * (dot(oc.z, ray.direction.z), dot(oc.y, oc.y)) + dot(dot(oc.z, oc.z), 2. * dot(oc.x, ray.direction.x)) + 2. * dot(dot(oc.z, ray.direction.z), dot(oc.x, oc.x)))
-     + 8. * dot(oc, ray.direction);
-    
-    float e1 = 8. * (dot(oX2, oY2) + dot(oZ2, oY2) + dot(oZ2, oX2)) + 4. * dot(oc, oc) - 16.;
-
-    float e2 = 8. * (dot(dot(oc.x, oc.x), dot(oc.y, oc.y)) + dot(dot(oc.z, oc.z), dot(oc.y, oc.y)) + dot(dot(oc.z, oc.z), dot(oc.x, oc.x))) + 4. * dot(oc, oc) - 16.;
-
     vec4 roots;
-    // int nroots = solveQuartic(a1, b1, c1, d1, e1, roots);
-    // int nroots = solveQuartic(a1, b2, c2, d2, e2, roots);
-    
-    
-    // New
+
     float rdx = ray.direction.x;
     float rdy = ray.direction.y;
     float rdz = ray.direction.z;
@@ -976,8 +937,88 @@ bool IntersectOctaeder(Ray ray, Octaeder octa, out Hit x) {
 
     int nroots = solveQuartic(f, g, h, i, j, roots);
 
-    // End of New
+    if (nroots > 0) {
+        float t1, t2, t;
+        if (nroots == 2) {
+            t =  min(roots.x, roots.y);
+        }
 
+        if (nroots == 4) {
+            t1 = min(roots.x, roots.y);
+            t2 = min(roots.z, roots.w);
+            t = min (t1, t2);
+        }
+
+        if (t>0.) {
+            vec3 p = Point(ray, t);
+            vec3 normale;
+
+            normale.x = 16. * (oc.x + ray.direction.x * t) * ( dot(oc.y, oc.y) + 2. * dot(oc.y, ray.direction.y) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.x + ray.direction.x * t);
+            normale.y = 16. * (oc.y + ray.direction.y * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.y + ray.direction.y * t);
+            normale.z = 16. * (oc.z + ray.direction.z * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.z + ray.direction.z * t);
+
+            x = Hit(t, normalize(normale), octa.id);
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief intersect between a Ray and a PipeConnector 
+ * 
+ * @param ray : The ray
+ * @param pip : Structure information
+ * @param x : Returned intersection information
+ * @return true 
+ * @return false 
+ */
+bool IntersectPipeConnector(Ray ray, PipeConnector pip, out Hit x) {
+    vec3 oc = ray.origin - pip.center;
+    vec4 roots;
+
+    float rdx = ray.direction.x;
+    float rdy = ray.direction.y;
+    float rdz = ray.direction.z;
+
+    float rdx2 = rdx * rdx;
+    float rdy2 = rdy * rdy;
+    float rdz2 = rdz * rdz;
+
+    float odx = oc.x * rdx;
+    float ody = oc.y * rdy;
+    float odz = oc.z * rdz;
+
+    float ocx2 = oc.x * oc.x;
+    float ocy2 = oc.y * oc.y;
+    float ocz2 = oc.z * oc.z;
+
+    float l = 2. * (dot(rdx2, rdy2) + dot(rdy2, rdz2) + dot(rdz2, rdx2)); 
+    float m = 2. * (2. * (dot(odx, rdy2) + dot(ody, rdx2) 
+                        + dot(ody, rdz2) + dot(odz, rdy2) 
+                        + dot(odz, rdx2) + dot(odx, rdz2)));
+
+    float n =  2. * (dot(ocx2, rdy2) + dot(ocy2, rdx2)
+                    + dot(ocy2, rdz2) + dot(ocz2, rdy2)
+                    + dot(ocz2, rdx2) + dot(ocx2, rdz2)
+                    + 4. * (dot(odx, ody) + dot(ody, odz) + dot(odz, odx)));
+    float o = 2. * (2. * (dot(ocx2, ody) + dot(ocy2, odx) 
+                        + dot(ocy2, odz) + dot(ocz2, ody) 
+                        + dot(ocz2, odx) + dot(ocx2, odz) ));
+
+    float p = 2. * (dot(ocx2, ocy2) + dot(ocy2, ocz2) + dot(ocz2, ocx2));
+
+    float q = -5. * (dot(ray.direction, ray.direction));
+    float r = -5. * (2. * (dot(oc, ray.direction)));
+    float s = -5. * (dot(oc, oc)) - 5. -(50. + 20. * cos(iTime));
+
+    float f = l;
+    float g = m;
+    float h = n + q;
+    float i = o + r;
+    float j = p + s;
+
+    int nroots = solveQuartic(f, g, h, i, j, roots);
 
     if (nroots > 0) {
         float t1, t2, t;
@@ -992,14 +1033,14 @@ bool IntersectOctaeder(Ray ray, Octaeder octa, out Hit x) {
         }
 
         if (t>0.) {
-            vec3 p=Point(ray, t);
+            vec3 p = Point(ray, t);
             vec3 normale;
 
-            normale.x = 16. * (oc.x + ray.direction.x * t) * ( dot(oc.y, oc.y) + 2. * dot(oc.y, ray.direction.y) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 8. * (oc.x + ray.direction.x * t);
-            normale.y = 16. * (oc.y + ray.direction.y * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 8. * (oc.y + ray.direction.y * t);
-            normale.z = 16. * (oc.z + ray.direction.z * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 8. * (oc.z + ray.direction.z * t);
+            normale.x = 4. * (oc.x + ray.direction.x * t) * ( dot(oc.y, oc.y) + 2. * dot(oc.y, ray.direction.y) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.x + ray.direction.x * t);
+            normale.y = 4. * (oc.y + ray.direction.y * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.y + ray.direction.y * t);
+            normale.z = 4. * (oc.z + ray.direction.z * t) * ( dot(oc.x, oc.x) + 2. * dot(oc.x, ray.direction.x) + dot(ray.direction.y * t, ray.direction.y * t) + dot(oc.z, oc.z) + 2. * dot(oc.z, ray.direction.z) + dot(ray.direction.z * t, ray.direction.z * t)) + 10. * (oc.z + ray.direction.z * t);
 
-            x = Hit(t, normalize(normale), octa.id);
+            x = Hit(t, normalize(normale), pip.id);
             return true;
         }
     }
@@ -1250,11 +1291,14 @@ Scene scene4(Ray ray) {
         scene.tabRay[i] = ray;
     }
 
-    scene.nbOctaeder = 1;
-    scene.tabOctaeder[0] = Octaeder(vec3(2.1, -3.2, 2.3), 1);
+    // scene.nbOctaeder = 1;
+    // scene.tabOctaeder[0] = Octaeder(vec3(2.1, -3.2, 2.3), 1);
     
-    scene.nbGoursat = 1;
-    scene.tabGoursat[0] = Goursat(vec3(-3, 3, 3), 1); 
+    // scene.nbGoursat = 1;
+    // scene.tabGoursat[0] = Goursat(vec3(-3, 3, 3), 1); 
+
+    scene.nbPipeConnector = 1;
+    scene.tabPipeConnector[0] = PipeConnector(vec3(-3, 3, 3), 2);
 
     return scene;
 }
@@ -1394,6 +1438,19 @@ bool Intersect(Ray ray, inout Hit x) {
         }
     }
     idR += scene.nbOctaeder;
+    for (int i = 0; i < scene.nbPipeConnector; i++) {
+        if (IntersectPipeConnector(ray, scene.tabPipeConnector[i], current)) {
+            if (scene.tabRay[i+idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+            if (current.t < x.t){
+                x = current;
+                if (scene.tabRay[i+idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabPipeConnector[i].center);
+                ret=true;
+            }
+        }
+    }
+    idR += scene.nbPipeConnector;
 
     /*****TEST MULTI SCENE *****/
 
@@ -1631,11 +1688,11 @@ vec3 Shade(Ray ray) {
 vec3 Shade(Ray ray) {
     // Intersect contains all the geo detection
     Hit x;
-    // x= Hit(1000.,vec3(0),-1);
+    // x = Hit(1000.,vec3(0),-1);
     bool idx = Intersect(ray,x);
     
     if (idx) {
-        vec3 p=Point(ray,x.t);
+        vec3 p = Point(ray,x.t);
         Material mat = Texture(p,x.i);
         // return x.normal;//débug normale
         return Color(mat,x.n, p, ray);
