@@ -715,7 +715,7 @@ bool IntersectTorus(Ray ray, Torus tor, out Hit x) {
         float e = (h * h) + k;
 
         vec4 roots;
-        int nroots = solveQuartic(a, b, c, d, e, roots);
+        int nroots = solveQuartic(a, b, c, d, e, roots); 
 
         if (nroots > 0) {
             float t1, t2, t;
@@ -927,7 +927,7 @@ bool IntersectOctaeder(Ray ray, Octaeder octa, out Hit x) {
 
     float q = 5. * (dot(ray.direction, ray.direction));
     float r = 5. * (2. * (dot(oc, ray.direction)));
-    float s = 5. * (dot(oc, oc))- 5. -(50. + 20. * cos(iTime));
+    float s = 5. * (dot(oc, oc)) + cos(iTime) * 67.5 - 82.5;
 
     float f = l;
     float g = m;
@@ -1312,6 +1312,23 @@ Scene scene4(Ray ray) {
     return scene;
 }
 
+Scene scene5(Ray ray) {
+    Scene scene;
+
+    scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
+    
+    for (int i = 0; i < 9; i++) {
+        scene.tabRay[i] = ray;
+    }
+
+     scene.nbSphere = 2;
+     scene.tabSphere[0] = Sphere(vec3(-2, 0, 1), 1.5, 6);
+     
+     scene.tabSphere[1] = Sphere(vec3(2, 0, 1), 1.5, 6);
+
+    return scene;
+}
+
 // Scene intersection
 // ray : The ray
 //   x : Returned intersection information
@@ -1344,7 +1361,7 @@ bool Intersect(Ray ray, inout Hit x) {
     Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
     vec3 angle = vec3(iTime, 0., 0.);
 
-    Scene scene = scene4(ray);
+    Scene scene = scene5(ray);
     Hit current;
     bool ret=false;
     int idR = 0;
