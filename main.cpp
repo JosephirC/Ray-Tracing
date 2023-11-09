@@ -332,7 +332,7 @@ return mix(brown, yellow, r) ;
 
 vec3 Wood3(vec3 p, vec3 color1, vec3 color2) {
     p = p + Turbulence(p, 5., 0.5, 5);
-    float r = sqrt (p.z * p.z);
+    float r = sqrt (p.x * p.x + p.y * p.y);
     float pattern = 0.5 + 0.5 * cos (10. * 3.1415927 * r) ;   
     return mix(color1, color2, pattern); 
 }
