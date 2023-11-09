@@ -181,8 +181,7 @@ float Hash(in vec3 p)
  * @param p : Point 
  * @return float : a random coefiscient
  */
-float Noise(in vec3 p)
-{
+float Noise(in vec3 p) {
     vec3 i = floor(p);
     vec3 f = fract(p);
   
@@ -298,6 +297,46 @@ Material VeinMarbleTexture(vec3 point, Material color1, Material color2) {
     }
 }
 
+float n21(vec2 p) {
+	const vec3 s = vec3(7, 157, 0);
+	vec2 h,
+	     ip = floor(p);
+	p = fract(p);
+	p = p * p * (3. - 2. * p);
+	h = s.zy + dot(ip, s.xy);
+	h = mix(fract(sin(h) * 43.5453), fract(sin(h + s.x) * 43.5453), p.x);
+	return mix(h.x, h.y, p.y);
+}
+
+float n11(float p) {
+	float ip = floor(p);
+	p = fract(p);
+	vec2 h = fract(sin(vec2(ip, ip + 1.) * 12.3456) * 43.5453);
+	return mix(h.x, h.y, p * p * (3. - 2. * p));
+}
+
+
+float WoodTexture(vec2 p) {
+	p.x *= 71.;
+	p.y *= 1.9;
+	return n11(n21(p) * 30.);
+}
+
+vec3 Wood(vec3 p) {
+vec3 q = p + Turbulence(p, 2.5, 2.5, 5);
+float r = 0.5 * (1. + sin(length(p.xy)));
+vec3 brown = vec3(.66, 0.18, 0.18);
+vec3 yellow = vec3(1., 1., 0.);
+return mix(brown, yellow, r) ;
+}
+
+vec3 Wood3(vec3 p, vec3 color1, vec3 color2) {
+    p = p + Turbulence(p, 5., 0.5, 5);
+    float r = sqrt (p.z * p.z);
+    float pattern = 0.5 + 0.5 * cos (10. * 3.1415927 * r) ;   
+    return mix(color1, color2, pattern); 
+}
+
 /**
  * @brief Definition of all texture in the scene
  * 
@@ -331,12 +370,25 @@ Material Texture(vec3 p, int i) {
         Material marble = VeinMarbleTexture(p, color1, color2);
         return marble;
     }
-    else if (i==6) { // Mirror
+    else if (i == 6) { // Mirror
         return Material(vec3(.8,.5,.4), vec3(.7), vec3(0.2), 50., 1., vec3(0,0, 0.));
     }
+    else if (i == 7) { // Wood
+        float woodValue = WoodTexture(p.xy);
+        vec3 color1 = vec3(.17, .1, .05);
+        vec3 color2 = vec3(.08, .05, .03);
+        vec3 texture = mix(color1, color2, woodValue);
+        return Material(texture, vec3(.2), vec3(0.1), 50., 0., vec3(0, 0, 0));
+    }
+    else if (i == 8) { // Wood 2
+        vec3 color1 = vec3(.17, .1, .05);
+        vec3 color2 = vec3(.08, .05, .03);
+        vec3 texture = Wood3(p, color1, color2);
+        return Material(texture, vec3(.7), vec3(0.2), 50., 0., vec3(0, 0, 0));
+    }
     else if (i == 0) { // classic checkboard
-        float f=Checkers(.5*p.xy);
-        vec3 col=vec3(.4,.5,.7)+f*vec3(.1);
+        float f = Checkers(.5*p.xy);
+        vec3 col = vec3(.4,.5,.7) + f * vec3(.1);
         return Material(col, vec3(0.3, 0.3, 0.3), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
     }
     return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.));
@@ -1322,9 +1374,9 @@ Scene scene5(Ray ray) {
     }
 
      scene.nbSphere = 2;
-     scene.tabSphere[0] = Sphere(vec3(-2, 0, 1), 1.5, 6);
-     
-     scene.tabSphere[1] = Sphere(vec3(2, 0, 1), 1.5, 6);
+     scene.tabSphere[0] = Sphere(vec3(-2, 0, 1), 1.5, 7);
+     scene.tabSphere[1] = Sphere(vec3(2.,0.,1.),1.5,8);
+
 
     return scene;
 }
