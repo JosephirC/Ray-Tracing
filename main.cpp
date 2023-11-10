@@ -1346,23 +1346,42 @@ Scene scene3(Ray ray){
 Scene scene4(Ray ray) {
     Scene scene;
 
-    scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
+    scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),4);
     
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 9; i++) {
         scene.tabRay[i] = ray;
     }
 
-    // scene.nbOctaeder = 1;
-    // scene.tabOctaeder[0] = Octaeder(vec3(2.1, -3.2, 2.3), 1);
-    
-    // scene.nbGoursat = 1;
-    // scene.tabGoursat[0] = Goursat(vec3(-3, 3, 3), 1); 
+    // //Box homothethy
+    scene.nbBox = 1;
+    scene.tabBox[0] = Box(vec3(-4., -1., 2.), vec3(-2, 1., 4.), 2);
+    scene.tabScale[0] = vec3(1., sin(iTime+1.5*3.1415)+2., cos(iTime)+2.);
+    scene.tabRay[0] = Homothetie(scene.tabRay[0], scene.tabScale[0], FindTheCenter(scene.tabBox[0].bottomCorner, scene.tabBox[0].topCorner));
 
-    scene.nbPipeConnector = 1;
-    scene.tabPipeConnector[0] = PipeConnector(vec3(-3, 3, 3), 2);
+    scene.nbTorus = 1;
+    scene.tabTorus[0] = Torus(vec3(0., 0., 0.), 1., .2, 7);
+    scene.tabRay[1] = Translation(scene.tabRay[1], vec3(0., 0., 4.));
+    scene.tabScale[1] = vec3(1., 1., 4.);
+    scene.tabAngle[1] = vec3(0.5*-iTime, 0., 0.);
+    scene.tabRay[1] = Rotation(scene.tabRay[1], scene.tabAngle[1], scene.tabTorus[0].center);
+    scene.tabRay[1] = Homothetie(scene.tabRay[1], scene.tabScale[1], scene.tabTorus[0].center);
+
+    scene.nbGoursat = 1;
+    scene.tabGoursat[0] = Goursat(vec3(0, 6, 1), 5); 
+    scene.tabScale[2] = vec3(1.,2.,1.);
+    scene.tabRay[2] = Homothetie(scene.tabRay[2], scene.tabScale[2], scene.tabGoursat[0].center);
+
+    scene.nbOctaeder = 1;
+    scene.tabOctaeder[0] = Octaeder(vec3(0, -6, 2.2), 1);
+    scene.tabAngle[3] = vec3(0., iTime, 10.*iTime);
+    scene.tabRay[3] = Rotation(scene.tabRay[3], scene.tabAngle[3], scene.tabOctaeder[0].center);
+
+    // scene.nbPipeConnector = 1;
+    // scene.tabPipeConnector[0] = PipeConnector(vec3(-3, 3, 3), 2);
 
     return scene;
 }
+
 
 Scene scene5(Ray ray) {
     Scene scene;
@@ -1413,7 +1432,7 @@ bool Intersect(Ray ray, inout Hit x) {
     Ray Tr1 = Translation(ray, vec3(0.,0.,3.));
     vec3 angle = vec3(iTime, 0., 0.);
 
-    Scene scene = scene5(ray);
+    Scene scene = scene4(ray);
     Hit current;
     bool ret=false;
     int idR = 0;
@@ -1431,36 +1450,54 @@ bool Intersect(Ray ray, inout Hit x) {
     }
 
     for (int i = 0; i < scene.nbSphere; i++) {
-        if (IntersectSphere(scene.tabRay[i], scene.tabSphere[i], current)) {
-            if (scene.tabRay[i].isHomo)
-                current = Homothetie(current, ray, scene.tabRay[i], scene.tabScale[i]);
-            if (current.t<x.t){
+        if (IntersectSphere(scene.tabRay[i + idR], scene.tabSphere[i], current)) {
+            if (scene.tabRay[i+idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+            if (current.t < x.t){
                 x = current;
-                if (scene.tabRay[i].isRot)
-                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i], scene.tabSphere[i].center);
+                if (scene.tabRay[i+idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabSphere[i].center);
                 ret=true;
             }
         }
     }
     idR += scene.nbSphere;
     for (int i = 0; i < scene.nbEllipsoid; i++) {
-        if (IntersectEllipsoid(ray,scene.tabEllipsoid[i],current) && current.t<x.t) {
-            x = current;
-            ret=true;
+        if (IntersectEllipsoid(scene.tabRay[i + idR],scene.tabEllipsoid[i],current) && current.t<x.t) {
+            if (scene.tabRay[i+idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+            if (current.t < x.t){
+                x = current;
+                if (scene.tabRay[i+idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabEllipsoid[i].center);
+                ret=true;
+            }
         }
     }
     idR += scene.nbEllipsoid;
     for (int i = 0; i < scene.nbCylinder; i++) {
-        if (IntersectCylinder(ray,scene.tabCylinder[i],current) && current.t<x.t) {
-            x = current;
-            ret=true;
+        if (IntersectCylinder(scene.tabRay[i + idR], scene.tabCylinder[i],current) && current.t<x.t) {
+            if (scene.tabRay[i+idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+            if (current.t < x.t){
+                x = current;
+                if (scene.tabRay[i+idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], FindTheCenter(scene.tabCylinder[i].bottomCenter, scene.tabCylinder[i].topCenter));
+                ret=true;
+            }
         }
     }
     idR += scene.nbCylinder;
     for (int i = 0; i < scene.nbCapsule; i++) {
-        if (IntersectCapsule(ray,scene.tabCapsule[i],current)&&current.t<x.t) {
-            x = current;
-            ret=true;
+        if (IntersectCapsule(scene.tabRay[i + idR], scene.tabCapsule[i],current)&&current.t<x.t) {
+            if (scene.tabRay[i+idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+            if (current.t < x.t){
+                x = current;
+                if (scene.tabRay[i+idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], FindTheCenter(scene.tabCapsule[i].bottomCenter, scene.tabCapsule[i].topCenter));
+                ret=true;
+            }
         }
     }
     idR += scene.nbCapsule;
@@ -1478,13 +1515,13 @@ bool Intersect(Ray ray, inout Hit x) {
     }
     idR += scene.nbBox;
     for (int i = 0; i < scene.nbTorus; i++) {
-        if (IntersectTorus(scene.tabRay[i+idR], scene.tabTorus[i], current)) {
-            if(scene.tabRay[i+idR].isHomo)
-                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
-            if(current.t<x.t){
+        if (IntersectTorus(scene.tabRay[i + idR], scene.tabTorus[i], current)) {
+            if(scene.tabRay[i + idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i + idR], scene.tabScale[i + idR]);
+            if(current.t < x.t){
                 x = current;
-                if(scene.tabRay[i+idR].isRot)
-                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabTorus[i].center);
+                if(scene.tabRay[i + idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i + idR], scene.tabTorus[i].center);
                 ret=true;
             }
         }
@@ -1493,24 +1530,24 @@ bool Intersect(Ray ray, inout Hit x) {
     for (int i = 0; i < scene.nbGoursat; i++) {
         if (IntersectGoursat(scene.tabRay[i + idR], scene.tabGoursat[i], current)) {
             if (scene.tabRay[i+idR].isHomo)
-                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+                current = Homothetie(current, ray, scene.tabRay[i + idR], scene.tabScale[i+idR]);
             if (current.t < x.t){
                 x = current;
                 if (scene.tabRay[i+idR].isRot)
-                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabGoursat[i].center);
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i + idR], scene.tabGoursat[i].center);
                 ret=true;
             }
         }
     }
     idR += scene.nbGoursat;
     for (int i = 0; i < scene.nbOctaeder; i++) {
-        if (IntersectOctaeder(ray, scene.tabOctaeder[i], current)) {
-            if (scene.tabRay[i+idR].isHomo)
-                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+        if (IntersectOctaeder(scene.tabRay[i + idR], scene.tabOctaeder[i], current)) {
+            if (scene.tabRay[i + idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i + idR], scene.tabScale[i+idR]);
             if (current.t < x.t){
                 x = current;
-                if (scene.tabRay[i+idR].isRot)
-                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabOctaeder[i].center);
+                if (scene.tabRay[i + idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i + idR], scene.tabOctaeder[i].center);
                 ret=true;
             }
         }
@@ -1518,12 +1555,12 @@ bool Intersect(Ray ray, inout Hit x) {
     idR += scene.nbOctaeder;
     for (int i = 0; i < scene.nbPipeConnector; i++) {
         if (IntersectPipeConnector(ray, scene.tabPipeConnector[i], current)) {
-            if (scene.tabRay[i+idR].isHomo)
-                current = Homothetie(current, ray, scene.tabRay[i+idR], scene.tabScale[i+idR]);
+            if (scene.tabRay[i + idR].isHomo)
+                current = Homothetie(current, ray, scene.tabRay[i + idR], scene.tabScale[i + idR]);
             if (current.t < x.t){
                 x = current;
-                if (scene.tabRay[i+idR].isRot)
-                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i+idR], scene.tabPipeConnector[i].center);
+                if (scene.tabRay[i + idR].isRot)
+                    x.normal = RotationNormal(x.normal, -scene.tabAngle[i + idR], scene.tabPipeConnector[i].center);
                 ret=true;
             }
         }
@@ -1684,7 +1721,7 @@ void MultiLight(inout Light l[25], int n) {
         for (int j = 0; j < n; j++) {
             int index = i * n + j;
             l[index].lightColor = vec3(1.0 / float(n * n), 1.0 / float(n * n), 1.0 / float(n * n));
-            l[index].lightPos = vec3(1.0 + float(i) / 20.0, 1.0 + float(j) / 20.0, 4.0);
+            l[index].lightPos = vec3(0.0 + float(i) / 20.0, 0.0 + float(j) / 20.0, 4.0);
         }
     }
 }
@@ -1694,13 +1731,13 @@ void MultiLight(inout Light l[25], int n) {
 // n : normal
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Scene scene;
-    scene.nbLight = 25;
-    MultiLight(scene.tabLight, 5);
-    // scene.tabLight[0].lightPos = vec3(10,10,8);
-    // scene.tabLight[0].lightColor = vec3(1,1,1);
+    scene.nbLight = 2;
+    //MultiLight(scene.tabLight, 5);
+    scene.tabLight[0].lightPos = vec3(0,0,4);
+    scene.tabLight[0].lightColor = vec3(1,1,1);
 
-    // scene.tabLight[1].lightPos = vec3(0,4,5);
-    // scene.tabLight[1].lightColor = vec3(1,1,1);
+    scene.tabLight[1].lightPos = vec3(18,10,10);
+    scene.tabLight[1].lightColor = vec3(1,1,1);
 
      //scene.tabLight[0].lightPos = vec3(1,1,3);
      //scene.tabLight[0].lightColor = vec3(1,1,1);
