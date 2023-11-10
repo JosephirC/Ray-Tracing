@@ -1384,6 +1384,7 @@ Scene sceneTexture(Ray ray) {
 
 Scene sceneMultiLight(Ray ray) {
      /* RAPPEL : 
+        ACTIVER MULTILIGHT DANS COLOR()
         LES POSITIONS DE LUMIERES ET LEURS COULEURS SONT GERES DANS LA FONCTION COLOR()
     */
     Scene scene;
@@ -1427,10 +1428,13 @@ Scene sceneOA(Ray ray) {
  */
 bool Intersect(Ray ray, inout Hit x) {
 
-    // ON DECOMENTE ICI ET ON COMMENTE DANS LA FONCTION SHADE() ET ON PEUT VOIR L'OA
+    /* RAPPEL : 
+    ON DECOMENTE ICI ET ON COMMENTE DANS LA FONCTION SHADE() ET ON PEUT VOIR L'OA 
+    NOUBLIEZ DE MODIFER LA FONCTON COLOR POUR L'OA AUSSI
+    */
     // x = Hit(1000., vec3(0.), -1);
 
-    Scene scene = sceneTransformation(ray);
+    Scene scene = sceneAllObjects(ray);
     Hit current;
     bool ret=false;
     int idR = 0;
@@ -1790,6 +1794,8 @@ vec3 ColorOriginal(Material m,vec3 n) {
 vec3 ShadeOriginal(Ray ray) {
     // Intersect contains all the geo detection
     Hit x;
+
+    //DECOMMENTER SI VOUS ACTIVER L'OA SEULEMENT, A REMETTRE PAR LA SUITE
     x = Hit(1000., vec3(0), -1);
     bool idx=Intersect(ray,x);
     
