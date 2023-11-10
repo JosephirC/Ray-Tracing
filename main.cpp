@@ -121,7 +121,7 @@ struct Scene {
     PipeConnector tabPipeConnector[10];// Array of PipeConnector
 
     int nbLight;// Number of displayed Light sources in the Scene
-    Light tabLight[10];// Array of Light sources
+    Light tabLight[25];// Array of Light sources
 };
 
 struct Material {
@@ -347,7 +347,7 @@ vec3 Wood3(vec3 p, vec3 color1, vec3 color2) {
 Material Texture(vec3 p, int i) {
     if (i == 1) { // uniform
         // return Material(vec3(.8,.0,.1),vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50.);
-        return Material(vec3(.8,.5,.4), vec3(0.3, 0.3, 0.3), vec3(0.7, 0.7, 0.7), 50., 0., vec3(0.));
+        return Material(vec3(.8,.5,.4), vec3(0.4, 0.4, 0.4), vec3(0.7, 0.7, 0.7), 50., 0., vec3(0.));
     }
     else if (i == 2) { // variation
         vec3 colorA = vec3(0.1,0.1,0.9);
@@ -359,8 +359,8 @@ Material Texture(vec3 p, int i) {
         return Material(texture, vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.) );
     }
     else if (i == 4) { // Marble
-        Material color1 = Material(vec3(1.2, 1.2, 1.2), vec3(0.7,0.7,0.7), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
-        Material color2 = Material(vec3(0.83, .83, .83), vec3(0.2,0.2,0.2), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.));
+        Material color1 = Material(vec3(1.2, 1.2, 1.2), vec3(0.4,0.4,0.4), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
+        Material color2 = Material(vec3(0.83, .83, .83), vec3(0.4,0.4,0.4), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.));
         Material marble = MarbleTexture(p, color1, color2);
         return marble;
     }
@@ -389,7 +389,7 @@ Material Texture(vec3 p, int i) {
     else if (i == 0) { // classic checkboard
         float f = Checkers(.5*p.xy);
         vec3 col = vec3(.4,.5,.7) + f * vec3(.1);
-        return Material(col, vec3(0.3, 0.3, 0.3), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
+        return Material(col, vec3(0.2, 0.2, 0.2), vec3(0.9, 0.9, 0.9), 50., 0., vec3(0.));
     }
     return Material(vec3(0),vec3(0.,0.,0.), vec3(0.2, 0.2, 0.2), 50., 0., vec3(0.));
 }
@@ -1267,7 +1267,7 @@ Scene scene1(Ray ray){
     Scene scene;
     scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 10; i++) {
         scene.tabRay[i] = ray;
     }
 
@@ -1296,7 +1296,7 @@ Scene scene2(Ray ray){
     Scene scene;
     scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 10; i++) {
         scene.tabRay[i] = ray;
     }
     //Box homothethy
@@ -1329,7 +1329,7 @@ Scene scene3(Ray ray){
 
     scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 10; i++) {
         scene.tabRay[i] = ray;
     }
 
@@ -1348,7 +1348,7 @@ Scene scene4(Ray ray) {
 
     scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),5);
     
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 10; i++) {
         scene.tabRay[i] = ray;
     }
 
@@ -1369,13 +1369,13 @@ Scene scene5(Ray ray) {
 
     scene.plane = Plane(vec3(0.,0.,1.), vec3(0.,0.,0.),0);
     
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 10; i++) {
         scene.tabRay[i] = ray;
     }
 
-     scene.nbSphere = 2;
+     scene.nbSphere = 1;
      scene.tabSphere[0] = Sphere(vec3(-2, 0, 1), 1.5, 7);
-     scene.tabSphere[1] = Sphere(vec3(2.,0.,1.),1.5,8);
+     scene.tabSphere[1] = Sphere(vec3(2.,0.,1.),1.5,5);
 
 
     return scene;
@@ -1421,7 +1421,7 @@ bool Intersect(Ray ray, inout Hit x) {
     const Octaeder oct = Octaeder(vec3(0., 0., 0.),1); 
 
     // on decomente ici et on commente dans la Fonction Shade et on peut voir l'OA
-    x = Hit(1000., vec3(0.), -1);
+    //x = Hit(1000., vec3(0.), -1);
 
     /*****TEST MULTI SCENE *****/
 
@@ -1672,17 +1672,38 @@ mat3 setCamera(in vec3 ro, in vec3 ta) {
     return mat3(cu, cv, cw);
 }
 
+/*void MultiLight(inout Light l[25], int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            l[i * n + j] = Light(vec3(1./ float(n * n)), vec3(1. + float(i) / 20., 1. + float(j) / 20., 4.));
+        }
+    }
+}*/
+void MultiLight(inout Light l[25], int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            int index = i * n + j;
+            l[index].lightColor = vec3(1.0 / float(n * n), 1.0 / float(n * n), 1.0 / float(n * n));
+            l[index].lightPos = vec3(1.0 + float(i) / 20.0, 1.0 + float(j) / 20.0, 4.0);
+        }
+    }
+}
+
 // Apply color model
 // m : Material
 // n : normal
 vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
     Scene scene;
-    scene.nbLight = 2 ;
-    scene.tabLight[0].lightPos = vec3(10,10,8);
-    scene.tabLight[0].lightColor = vec3(1,1,1);
+    scene.nbLight = 25;
+    MultiLight(scene.tabLight, 5);
+    // scene.tabLight[0].lightPos = vec3(10,10,8);
+    // scene.tabLight[0].lightColor = vec3(1,1,1);
 
-    scene.tabLight[1].lightPos = vec3(0,4,5);
-    scene.tabLight[1].lightColor = vec3(1,1,1);
+    // scene.tabLight[1].lightPos = vec3(0,4,5);
+    // scene.tabLight[1].lightColor = vec3(1,1,1);
+
+     //scene.tabLight[0].lightPos = vec3(1,1,3);
+     //scene.tabLight[0].lightColor = vec3(1,1,1);
 
     Ray rotLight = Rotation(Ray(scene.tabLight[0].lightPos, vec3(0), false, false), vec3(0, 0, iTime), vec3(1, 0, 0));
 
@@ -1700,7 +1721,7 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
 
         randomHit = Hit( length(scene.tabLight[i].lightPos - p), vec3(0.), -1);
     
-        if (!Intersect(r, randomHit) || randomHit.t >= length(scene.tabLight[i].lightPos - p)) {
+        if (!Intersect(r, randomHit) && randomHit.t >= length(scene.tabLight[i].lightPos - p)) {
         // if (true) {
             vec3 reflectDirection = reflect(-lightDirection, n);// Direction de réflexion de lumiere depuis mon objet   
             
@@ -1711,7 +1732,7 @@ vec3 Color(Material m,vec3 n, vec3 p, Ray camera) {
             vec3 diffuseColor = m.diffuse * diff * scene.tabLight[i].lightColor;// Éclairage diffus
 
             // Couleur a retourner
-            finalColor += (specularColor + diffuseColor);
+            finalColor += (specularColor * (1. / float(scene.nbLight)) + diffuseColor);// / float(scene.nbLight);
             // finalColor = m.a;
         } else {
             finalColor += vec3(0,0,0); 
@@ -1728,7 +1749,7 @@ vec3 Shade(Ray ray) {
 
     for (int reflection = 0; reflection < MAX_REFLECTION; reflection++) {
         Hit x;
-        //x = Hit(1000., vec3(0), -1);
+        x = Hit(1000., vec3(0), -1);
         bool idx = Intersect(ray, x);
 
         if (idx) {
