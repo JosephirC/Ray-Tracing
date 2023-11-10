@@ -1810,6 +1810,7 @@ vec3 ShadeOriginal(Ray ray) {
     }
     return vec3(0);
 }
+*/
 
 void mainImage(out vec4 fragColor,in vec2 fragCoord) {
     // From uv which are the pixel coordinates in [0,1], change to [-1,1] and apply aspect ratio
